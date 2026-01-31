@@ -1,1 +1,14 @@
-<p>dashboard works!</p>
+<div class="dashboard">
+
+  <!-- Topbar sobre todo -->
+  <app-topbar></app-topbar>
+
+  <!-- Contenedor del resto -->
+  <div class="content-wrapper">
+    <app-sidebar></app-sidebar>
+
+    <div class="main-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
