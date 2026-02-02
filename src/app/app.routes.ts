@@ -9,19 +9,15 @@ export const routes: Routes = [
   { path: '', component: Home },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
-<<<<<<< Updated upstream
   { path: 'dashboard', component: Dashboard },
-];
-=======
   { path: 'Home', component:Home},
   {
     path: 'dashboard',
     component: Dashboard,   
     children: [
-      { path: '', component: Principal }, 
+      { path: '', component: Dashboard }, 
     ],
   },
   { path: '**', component: Login },
 
 ];
->>>>>>> Stashed changes

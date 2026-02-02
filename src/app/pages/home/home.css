@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-=======
-
 /*Contenedor Principal*/
 .container {
   height: 100vh;
@@ -258,4 +255,3 @@ h1 {
   50%  { transform: translateY(-12px) scale(1.04); }
   100% { transform: translateY(0) scale(1); }
 }
->>>>>>> Stashed changes
