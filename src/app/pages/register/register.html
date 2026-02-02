@@ -1,1 +1,282 @@
-<p>register works!</p>
+<div class="login-page">
+  <div class="particles-container"></div>
+  <div class="neon-glow"></div>
+  <div class="floating-shapes">
+    <div class="floating-shape shape1"></div>
+    <div class="floating-shape shape2"></div>
+    <div class="floating-shape shape3"></div>
+    <div class="floating-shape shape4"></div>
+    <div class="floating-shape shape5"></div>
+  </div>
+
+  <div class="login-layout">
+    <section class="left">
+      <div class="brand-header">
+        <img class="logo" src="\imagen\Jaguar.png" alt="Mind Jaguar" />
+        <div class="logo-glow"></div>
+        <h1 class="brand-name">Mind<span>Jaguar</span></h1>
+      </div>
+
+      <h1 class="title">
+        <span class="title-text">Crear cuenta</span>
+        <span class="title-underline"></span>
+      </h1>
+
+      <button type="button" class="google-btn" (click)="onGoogle()">
+        <span class="g-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M21.35 11.1H12v2.98h5.35c-.5 2.95-3.03 4.22-5.35 4.22-3.2 0-5.8-2.6-5.8-5.8S8.8 6.7 12 6.7c1.72 0 2.88.7 3.54 1.3l2.02-2.02C16.3 4.7 14.38 4 12 4 7.58 4 4 7.58 4 12s3.58 8 8 8c4.62 0 7.7-3.24 7.7-7.8 0-.52-.05-.92-.15-1.1Z"
+              fill="#4285F4"
+            />
+          </svg>
+        </span>
+        <span class="btn-text">Registrarme con Google</span>
+        <span class="btn-ripple"></span>
+      </button>
+
+      <div class="divider">
+        <span class="divider-line"></span>
+        <span class="divider-text">O crea tu cuenta con email</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="two-cols">
+          <div class="field">
+            <label class="input-label" for="names">
+              <svg class="input-icon" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <div class="input-container">
+                <input
+                  id="names"
+                  type="text"
+                  formControlName="names"
+                  placeholder="Nombres"
+                  autocomplete="given-name"
+                />
+                <div class="input-border"></div>
+              </div>
+            </label>
+            <small class="err" *ngIf="submitted && names.invalid">
+              <span *ngIf="names.errors?.['required']">Los nombres son obligatorios</span>
+              <span *ngIf="names.errors?.['minlength']">Mínimo 2 caracteres</span>
+            </small>
+          </div>
+
+          <div class="field">
+            <label class="input-label" for="lastNames">
+              <svg class="input-icon" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <div class="input-container">
+                <input
+                  id="lastNames"
+                  type="text"
+                  formControlName="lastNames"
+                  placeholder="Apellidos"
+                  autocomplete="family-name"
+                />
+                <div class="input-border"></div>
+              </div>
+            </label>
+            <small class="err" *ngIf="submitted && lastNames.invalid">
+              <span *ngIf="lastNames.errors?.['required']">Los apellidos son obligatorios</span>
+              <span *ngIf="lastNames.errors?.['minlength']">Mínimo 2 caracteres</span>
+            </small>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="input-label" for="email">
+            <svg class="input-icon" viewBox="0 0 24 24">
+              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+            </svg>
+            <div class="input-container">
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="correo@unitec.edu"
+                autocomplete="email"
+                (input)="validateEmail()"
+              />
+              <div class="input-border"></div>
+            </div>
+          </label>
+          <small class="err" *ngIf="submitted && email.invalid">
+            <span *ngIf="email.errors?.['required']">El correo es obligatorio</span>
+            <span *ngIf="email.errors?.['email']">Correo electrónico inválido</span>
+            <span *ngIf="email.errors?.['unitecEmail']">Solo se permiten correos @unitec.edu</span>
+          </small>
+          <div class="valid-icon" *ngIf="email.valid && !email.errors?.['unitecEmail']">
+            <svg viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="input-label" for="password">
+            <svg class="input-icon" viewBox="0 0 24 24">
+              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+            </svg>
+            <div class="input-container">
+              <input
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Contraseña"
+                autocomplete="new-password"
+              />
+              <div class="input-border"></div>
+              <button
+                type="button"
+                class="eye"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <svg *ngIf="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/>
+                  <path d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+                </svg>
+                <svg *ngIf="showPassword" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 4.27 4.28 3 21 19.72 19.73 21l-3.1-3.1A11.2 11.2 0 0 1 12 19C5 19 2 12 2 12a19.2 19.2 0 0 1 5.05-6.7L3 4.27Zm7.34 7.34A2 2 0 0 0 12 14a2 2 0 0 0 1.39-.56l-3.05-3.05ZM12 5c7 0 10 7 10 7a18.7 18.7 0 0 1-3.7 5.1l-2.2-2.2A5 5 0 0 0 9.1 7.9l-1.6-1.6A12.2 12.2 0 0 1 12 5Z"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+          <small class="err" *ngIf="submitted && password.invalid">
+            <span *ngIf="password.errors?.['required']">La contraseña es obligatoria</span>
+            <span *ngIf="password.errors?.['minlength']">Mínimo 6 caracteres</span>
+          </small>
+        </div>
+
+        <div class="field">
+          <label class="input-label" for="confirmPassword">
+            <svg class="input-icon" viewBox="0 0 24 24">
+              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+            </svg>
+            <div class="input-container">
+              <input
+                id="confirmPassword"
+                [type]="showConfirm ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                placeholder="Confirmar contraseña"
+                autocomplete="new-password"
+              />
+              <div class="input-border"></div>
+              <button
+                type="button"
+                class="eye"
+                (click)="toggleConfirm()"
+                [attr.aria-label]="showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <svg *ngIf="!showConfirm" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/>
+                  <path d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+                </svg>
+                <svg *ngIf="showConfirm" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 4.27 4.28 3 21 19.72 19.73 21l-3.1-3.1A11.2 11.2 0 0 1 12 19C5 19 2 12 2 12a19.2 19.2 0 0 1 5.05-6.7L3 4.27Zm7.34 7.34A2 2 0 0 0 12 14a2 2 0 0 0 1.39-.56l-3.05-3.05ZM12 5c7 0 10 7 10 7a18.7 18.7 0 0 1-3.7 5.1l-2.2-2.2A5 5 0 0 0 9.1 7.9l-1.6-1.6A12.2 12.2 0 0 1 12 5Z"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+
+          <small class="err" *ngIf="submitted && confirmPassword.invalid">
+            <span *ngIf="confirmPassword.errors?.['required']">Confirma tu contraseña</span>
+            <span *ngIf="confirmPassword.errors?.['minlength']">Mínimo 6 caracteres</span>
+          </small>
+
+          <small class="err" *ngIf="submitted && form.errors?.['passwordMismatch']">
+            Las contraseñas no coinciden
+          </small>
+        </div>
+
+        <div class="row">
+          <label class="check">
+            <div class="check-container">
+              <input type="checkbox" formControlName="terms" />
+              <span class="checkmark">
+                <svg viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+              </span>
+            </div>
+            <span class="check-text">Acepto los términos</span>
+          </label>
+
+          <a class="link" routerLink="/login">
+            <span>Ya tengo cuenta</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+            </svg>
+          </a>
+        </div>
+
+        <button class="login-btn" type="submit" [disabled]="isLoading">
+          <span class="btn-content">
+            <span *ngIf="!isLoading" class="btn-text">Crear cuenta</span>
+            <span *ngIf="isLoading" class="loading">
+              <span class="spinner"></span>
+              <span>Creando...</span>
+            </span>
+          </span>
+          <span class="btn-shine"></span>
+          <span class="btn-pulse"></span>
+        </button>
+
+        <p class="signup">
+          ¿Ya tienes una cuenta?
+          <a class="link strong" routerLink="/login">
+            <span>Inicia sesión</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+            </svg>
+          </a>
+        </p>
+
+        <div class="error" *ngIf="errorMsg">
+          <svg class="error-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <span>{{ errorMsg }}</span>
+        </div>
+      </form>
+    </section>
+
+    <section class="right">
+      <div class="holographic-effect"></div>
+
+      <div class="message">
+        <h2>
+          <span class="line">Bienvenido</span>
+          <span class="line">a Mind</span>
+          <span class="line">Jaguar</span>
+        </h2>
+        <div class="message-underline"></div>
+
+        <p>
+          Crea tu cuenta con tu correo <b class="highlight">@unitec.edu</b> y accede a herramientas
+          para resúmenes, guías y exámenes personalizados.
+        </p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">🧠</div>
+            <span>Aprendizaje inteligente</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">📝</div>
+            <span>Contenido personalizado</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🚀</div>
+            <span>Progreso más rápido</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
