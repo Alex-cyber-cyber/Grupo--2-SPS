@@ -1,4 +1,22 @@
-# ProyectoVanguardia
+# Jaguar Mind
+
+Ruge en tus exámenes. ¡Domina tu carrera!
+
+
+## Authors
+
+- Nataly Zuniga
+- Nestor Espinal
+- Jahir Salgado
+- Oscar Guifarro
+- German Barrera
+- Rigoberto Pacheco
+
+## Features
+
+- Tomar notas de tus clases
+- Generar resumenes para estudio
+- Consultas a IA para obtener respuestas puntuales basadas en tus notas 
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.2.
 
