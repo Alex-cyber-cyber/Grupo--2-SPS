@@ -1,14 +1,18 @@
-/* Sidebar minimalista */
+/* Sidebar  */
 .sidebar {
+  position: fixed;      /* fijo en la pantalla */
+  top: 70px;  
   width: 240px;
   height: 100vh;
-  background-color: #ffffff; /* Blanco base */
+  background-color: #ffffff; 
   display: flex;
   flex-direction: column;
   padding: 20px;
   box-shadow: 2px 0 8px rgba(0,0,0,0.1);
   font-family: 'Segoe UI', sans-serif;
   transition: width 0.3s;
+  z-index: 500;  
+  height: calc(100vh - 70px);
 }
 
 /* Logo */
@@ -66,7 +70,7 @@
 /* Barra lateral izquierda activa */
 .menu li.active::before {
   content: '';
-  position: absolute;
+  position: 60;
   left: 0;
   top: 0;
   height: 100%;

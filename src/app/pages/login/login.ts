@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -12,6 +12,7 @@ import { RouterModule } from '@angular/router';
 })
 export class Login {
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   submitted = false;
   isLoading = false;
@@ -75,13 +76,14 @@ export class Login {
     }
 
     this.isLoading = true;
-
+    
     try {
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1000));
+      this.router.navigate(['/dashboard']);
     } catch (e: any) {
       this.errorMsg = e?.message ?? 'Error al iniciar sesión';
     } finally {
       this.isLoading = false;
     }
-  }
+ }
 }
