@@ -1,4 +1,5 @@
 
+
 /*FUENTES Y RESET*/
 
 * {
@@ -7,6 +8,7 @@
   box-sizing: border-box;
   font-family: 'Inter', system-ui, sans-serif;
 }
+
 
 /*Contenedor Principal*/
 .container {

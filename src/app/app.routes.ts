@@ -10,6 +10,10 @@ export const routes: Routes = [
   { path: '', component: Home },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
+
+  { path: 'Home', component:Home},
+
+  { path: 'dashboard', component: Dashboard },
   { path: 'Home', component:Home},
 
   {
@@ -19,4 +23,10 @@ export const routes: Routes = [
       { path: '', component: Principal }, 
     ],
   },
+];
+      { path: '', component: Dashboard }, 
+    ],
+  },
+  { path: '**', component: Login },
+
 ];
