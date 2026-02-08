@@ -1,4 +1,5 @@
 export const environment = {
+  production: true,
   firebase: {
     apiKey: "AIzaSyAbFRtsnYTH4cCeeXLx07LL62-ywF2fF64",
     authDomain: "jaguar-mind.firebaseapp.com",
@@ -9,3 +10,4 @@ export const environment = {
     measurementId: "G-EPT2C2304D",
   },
 };
+
