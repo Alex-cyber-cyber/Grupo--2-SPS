@@ -1,0 +1,28 @@
+<div class="subjects-container">
+  <div class="subjects-header">
+    <h1>Mis Materias</h1>
+    <button class="primary" (click)="openAddModal()">
+      + Agregar materia
+    </button>
+  </div>
+
+  <app-add-subject-modal
+    *ngIf="showAddModal"
+    (close)="onModalClose($event)">
+  </app-add-subject-modal>
+
+  <div *ngIf="subjects.length === 0" class="empty-state">
+  No tienes materias agregadas
+  </div>
+
+
+  <div class="cards-grid">
+    <app-subject-card
+      *ngFor="let subject of subjects"
+      [subject]="subject"
+      (open)="openSubject($event)"
+      (generate)="generateGuide($event)"
+      (remove)="removeSubject($event)">
+    </app-subject-card>
+  </div>
+</div>
