@@ -1,6 +1,6 @@
 .topbar {
   height: 70px;
-  background-color: #ffffff; /* blanco base */
+  background-color: #ffffff; 
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -12,7 +12,7 @@
   z-index: 1000;
 }
 
-/* Logo grande */
+
 .topbar-left {
   display: flex;
   align-items: center;
@@ -20,7 +20,7 @@
 }
 
 .topbar-left .logo {
-  width: 90px; /* más grande */
+  width: 90px; 
   height: 90px;
   object-fit: contain;
 }
@@ -28,7 +28,7 @@
 .topbar-left .app-name {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #8B0D21; /* bordó */
+  color: #8B0D21;
 }
 
 /* Notificaciones y perfil */
@@ -49,7 +49,7 @@
   position: absolute;
   top: -6px;
   right: -8px;
-  background-color: #E4002B; /* rojo vibrante */
+  background-color: #E4002B; 
   color: #fff;
   font-size: 12px;
   font-weight: bold;
@@ -74,11 +74,11 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #E4002B; /* borde rojo vibrante */
+  border: 2px solid #E4002B; 
 }
 
 .profile .username {
   font-size: 1rem;
   font-weight: 500;
-  color: #1f2937; /* gris oscuro */
+  color: #1f2937; 
 }

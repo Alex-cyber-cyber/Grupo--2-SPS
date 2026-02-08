@@ -1,5 +1,5 @@
 export const environment = {
-  production: true,
+  production: false,
   firebase: {
     apiKey: 'AIzaSyAbFRtsnYTH4cCeeXLx07LL62-ywF2fF64',
     authDomain: 'jaguar-mind.firebaseapp.com',

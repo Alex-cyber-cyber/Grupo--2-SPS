@@ -1,4 +1,3 @@
-/* Reset global para eliminar márgenes */
 html, body {
   margin: 0;
   padding: 0;
@@ -33,7 +32,6 @@ app-topbar {
   flex: 1;
   height: 100%;   /* ocupa todo el espacio restante */
   overflow: hidden;
-  margin-top: 0;  /* sin espacio extra */
 }
 
 /* Sidebar gordito */
@@ -46,7 +44,7 @@ app-sidebar {
 /* Contenido principal */
 .main-content {
   flex: 1;
-  padding: 20px 30px;
+  padding: 0px 0px;
   height: 100%;
-  overflow-y: hidden; /* nada de scroll */
+  overflow-y: hidden;
 }

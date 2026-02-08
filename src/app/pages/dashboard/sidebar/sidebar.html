@@ -1,5 +1,4 @@
 <div class="sidebar">
-
   <!-- Menú -->
   <ul class="menu">
     <li routerLink="/dashboard" routerLinkActive="active">
@@ -8,14 +7,14 @@
     </li>
 
     <li routerLink="/favoritos" routerLinkActive="active">
-     <span class="icon">📚</span>
+      <span class="icon">📚</span>
       <span class="label">Mis Materias </span>
-    </li> 
+    </li>
 
     <li routerLink="/favoritos" routerLinkActive="active">
-     <span class="icon">⭐</span>
+      <span class="icon">⭐</span>
       <span class="label">Favoritos</span>
-    </li> 
+    </li>
     <li routerLink="/examenes" routerLinkActive="active">
       <span class="icon">📝</span>
       <span class="label">Exámenes</span>
@@ -28,9 +27,9 @@
       <span class="icon">📊</span>
       <span class="label">Estadísticas</span>
     </li>
-    <li routerLink="/Home" routerLinkActive="active">
-     <span class="icon">🚪</span>
+    <li (click)="logout()">
+      <span class="icon">🚪</span>
       <span class="label">Salir</span>
-    </li> 
+    </li>
   </ul>
 </div>
