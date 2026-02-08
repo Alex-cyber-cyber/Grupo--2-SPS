@@ -1,7 +1,14 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -12,12 +19,13 @@ import { RouterModule } from '@angular/router';
 })
 export class Register {
   private fb = inject(FormBuilder);
-
+  private authService: AuthService = inject(AuthService);
+  private router = inject(Router);
   submitted = false;
   isLoading = false;
   showPassword = false;
   showConfirm = false;
-  errorMsg = '';
+  errorMsg = signal('');
 
   form = this.fb.group(
     {
@@ -28,7 +36,7 @@ export class Register {
       confirmPassword: ['', [Validators.required, Validators.minLength(6)]],
       terms: [false, [Validators.requiredTrue]],
     },
-    { validators: [this.passwordMatchValidator] }
+    { validators: [this.passwordMatchValidator] },
   );
 
   unitecEmailValidator(control: AbstractControl): ValidationErrors | null {
@@ -76,24 +84,29 @@ export class Register {
     this.showConfirm = !this.showConfirm;
   }
 
-  onGoogle() {
-    this.errorMsg = 'Conectando con Google...';
-    setTimeout(() => (this.errorMsg = ''), 3000);
+  async onGoogle() {
+    try {
+      await this.authService.loginWithGoogle();
+      await this.router.navigateByUrl('/dashboard', { replaceUrl: true });
+    } catch (error) {
+      this.errorMsg.set('Error al iniciar sesión con Google');
+      setTimeout(() => this.errorMsg.set(''), 3000);
+    }
   }
 
   async onSubmit() {
     this.submitted = true;
-    this.errorMsg = '';
+    this.errorMsg.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
 
       if (this.email.errors?.['unitecEmail']) {
-        this.errorMsg = 'Solo se permiten correos institucionales @unitec.edu';
+        this.errorMsg.set('Solo se permiten correos institucionales @unitec.edu');
       } else if (this.form.errors?.['passwordMismatch']) {
-        this.errorMsg = 'Las contraseñas no coinciden';
+        this.errorMsg.set('Las contraseñas no coinciden');
       } else if (this.form.get('terms')?.invalid) {
-        this.errorMsg = 'Debes aceptar los términos';
+        this.errorMsg.set('Debes aceptar los términos');
       }
 
       return;
@@ -102,11 +115,22 @@ export class Register {
     this.isLoading = true;
 
     try {
-      await new Promise(r => setTimeout(r, 1500));
-      this.errorMsg = 'Cuenta creada exitosamente';
-      setTimeout(() => (this.errorMsg = ''), 2500);
+      const response = await this.authService.registerWithEmail({
+        email: this.email.value!,
+        password: this.password.value!,
+        firstName: this.names.value!,
+        lastName: this.lastNames.value!,
+      });
+
+      this.isLoading = false;
+
+      if (response.user) {
+        console.log('Registered user:', response.user);
+        this.errorMsg.set('Registro exitoso');
+        this.router.navigate(['/dashboard'], { replaceUrl: true });
+      }
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Error al registrar';
+      this.errorMsg.set(e?.message ?? 'Error al registrar');
     } finally {
       this.isLoading = false;
     }

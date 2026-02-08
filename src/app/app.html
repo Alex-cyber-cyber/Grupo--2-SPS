@@ -1,2 +1,8 @@
-
-<router-outlet />
+@if (isAuthReady()) {
+  <router-outlet />
+} @else {
+  <div class="splash-screen">
+    <div class="spinner"></div>
+    <p>Cargando...</p>
+  </div>
+}
