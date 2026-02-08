@@ -1,0 +1,25 @@
+<div class="modal-backdrop">
+  <div class="modal">
+    <h2>Agregar materia</h2>
+
+    <select [(ngModel)]="selectedSubjectId">
+      <option value="" disabled selected>
+        Selecciona una materia
+      </option>
+
+      <option *ngFor="let subject of subjects" [value]="subject.id">
+        {{ subject.name }}
+      </option>
+    </select>
+
+    <div class="actions">
+      <button class="cancel" (click)="cancel()">Cancelar</button>
+      <button
+        class="primary"
+        (click)="addSubject()"
+        [disabled]="!selectedSubjectId">
+        Agregar
+      </button>
+    </div>
+  </div>
+</div>

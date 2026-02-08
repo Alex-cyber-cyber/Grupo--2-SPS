@@ -1,0 +1,54 @@
+.subjects-container {
+  padding: 24px;
+  padding-top: 96px;
+}
+
+.subjects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.subjects-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+button.primary {
+  background-color: #e60023;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button.primary:hover {
+  background-color: #c8001e;
+}
+
+.empty-state {
+  background: #f5f5f5;
+  padding: 32px;
+  border-radius: 12px;
+  text-align: center;
+  color: #666;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.empty-state {
+  background: #f6f6f6;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
