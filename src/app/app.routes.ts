@@ -6,6 +6,9 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Principal } from './pages/dashboard/principal/principal';
 import { NotAuthenticatedGuard } from './auth/guards/not-authenticated.guard';
 import { IsAuthenticatedGuard } from './auth/guards/is-authenticated.guard';
+import { Resources } from './pages/dashboard/resources/resources';
+import { Subjects } from './pages/dashboard/subjects/subjects';
+import { ResourceDetail } from './pages/dashboard/resource-detail/resource-detail';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -17,7 +20,12 @@ export const routes: Routes = [
     path: 'dashboard',
     component: Dashboard,
     canMatch: [IsAuthenticatedGuard],
-    children: [{ path: '', component: Principal }],
+    children: [
+    { path: '', component: Principal },
+    { path: 'subjects', component: Subjects },   
+    { path: 'resources', component: Resources }, 
+    { path: 'resources/:id', component: ResourceDetail } 
+  ]
   },
 
   { path: '**', redirectTo: 'login' },

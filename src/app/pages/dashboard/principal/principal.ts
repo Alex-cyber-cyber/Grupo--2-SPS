@@ -34,8 +34,8 @@ export class Principal implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (!this.isBrowser) return;
-    setTimeout(() => this.crearGraficos());
+  if (!this.isBrowser) return;
+  setTimeout(() => this.crearGraficos());
   }
 
   // =========================

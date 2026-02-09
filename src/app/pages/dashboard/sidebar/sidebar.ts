@@ -10,6 +10,12 @@ import { AuthService } from '../../../auth/services/auth.service';
   styleUrls: ['./sidebar.css'],
 })
 export class SidebarComponent {
+  isCollapsed = false;
+
+  toggleSidebar() {
+    this.isCollapsed = !this.isCollapsed;
+  }
+
   router = inject(Router);
   authService = inject(AuthService);
 
