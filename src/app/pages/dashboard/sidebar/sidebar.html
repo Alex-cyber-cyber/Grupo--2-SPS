@@ -1,52 +1,38 @@
-<nav class="sidebar">
-  <ul class="sidebar-menu">
-    <li routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <a routerLink="/dashboard" class="sidebar-link">
-        <span class="sidebar-icon">🏠</span>
-        <span class="sidebar-text">Home</span>
-      </a>
+<div class="sidebar">
+  <ul class="menu">
+    <li routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <span class="icon">🏠</span>
+      <span class="label">Home</span>
     </li>
 
-    <li routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <a routerLink="/dashboard/subjects" class="sidebar-link">
-        <span class="sidebar-icon">📚</span>
-        <span class="sidebar-text">Mis Materias</span>
-      </a>
+    <li routerLink="/dashboard/subjects" routerLinkActive="active">
+      <span class="icon">📚</span>
+      <span class="label">Mis Materias</span>
     </li>
 
-    <li routerLinkActive="active">
-      <a routerLink="/dashboard/favoritos" class="sidebar-link">
-        <span class="sidebar-icon">⭐</span>
-        <span class="sidebar-text">Favoritos</span>
-      </a>
+    <li routerLink="/dashboard/favoritos" routerLinkActive="active">
+      <span class="icon">⭐</span>
+      <span class="label">Favoritos</span>
     </li>
 
-    <li routerLinkActive="active">
-      <a routerLink="/dashboard/examenes" class="sidebar-link">
-        <span class="sidebar-icon">📝</span>
-        <span class="sidebar-text">Exámenes</span>
-      </a>
+    <li routerLink="/dashboard/examenes" routerLinkActive="active">
+      <span class="icon">📝</span>
+      <span class="label">Exámenes</span>
     </li>
 
-    <li routerLinkActive="active">
-      <a routerLink="/dashboard/guias" class="sidebar-link">
-        <span class="sidebar-icon">📖</span>
-        <span class="sidebar-text">Guías de Estudio</span>
-      </a>
+    <li routerLink="/dashboard/guias" routerLinkActive="active">
+      <span class="icon">📖</span>
+      <span class="label">Guías de Estudio</span>
     </li>
 
-    <li routerLinkActive="active">
-      <a routerLink="/dashboard/estadisticas" class="sidebar-link">
-        <span class="sidebar-icon">📊</span>
-        <span class="sidebar-text">Estadísticas</span>
-      </a>
+    <li routerLink="/dashboard/estadisticas" routerLinkActive="active">
+      <span class="icon">📊</span>
+      <span class="label">Estadísticas</span>
     </li>
 
-    <li class="danger">
-      <button type="button" class="sidebar-link sidebar-btn" (click)="logout()">
-        <span class="sidebar-icon">🚪</span>
-        <span class="sidebar-text">Salir</span>
-      </button>
+    <li (click)="logout()">
+      <span class="icon">🚪</span>
+      <span class="label">Salir</span>
     </li>
   </ul>
-</nav>
+</div>

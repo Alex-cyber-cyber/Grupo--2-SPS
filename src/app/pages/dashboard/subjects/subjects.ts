@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Auth, onAuthStateChanged, Unsubscribe } from '@angular/fire/auth';
+import { Auth, Unsubscribe, onAuthStateChanged } from '@angular/fire/auth';
 
 import { SubjectsService } from '../../../services/subjects.service';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
@@ -49,12 +49,13 @@ export class Subjects implements OnInit, OnDestroy {
   }
 
   openAddModal() {
+    if (!this.uid) return;
     this.showAddModal = true;
   }
 
   async onModalClose(e: { saved: boolean }) {
     this.showAddModal = false;
-    if (e.saved) await this.refresh(true);
+    if (e?.saved) await this.refresh(true);
   }
 
   toggleRefresh(ev?: Event) {

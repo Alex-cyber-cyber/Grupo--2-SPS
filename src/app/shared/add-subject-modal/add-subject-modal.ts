@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SubjectsService, ModuleQuarter, SubjectScheduleRow, WeekdayKey } from '../../services/subjects.service';
+
+import { SubjectsService, SubjectScheduleRow, WeekdayKey } from '../../services/subjects.service';
 
 @Component({
   selector: 'app-add-subject-modal',
@@ -12,13 +13,10 @@ import { SubjectsService, ModuleQuarter, SubjectScheduleRow, WeekdayKey } from '
 })
 export class AddSubjectModal {
   @Input({ required: true }) uid!: string;
-
   @Output() close = new EventEmitter<{ saved: boolean }>();
 
   saving = false;
   errorMsg = '';
-
-  timeOptions: { value: string; label: string }[] = [];
 
   readonly colors = ['#2563EB', '#16A34A', '#DC2626', '#7C3AED', '#F59E0B', '#0EA5E9', '#111827'];
   readonly icons = ['📚', '🧠', '💻', '🧪', '📊', '🧮', '📝', '🔬', '⚡', '🎨'];
@@ -59,9 +57,11 @@ export class AddSubjectModal {
     { key: 'sun', label: 'Domingo' },
   ];
 
+  timeOptions: { value: string; label: string }[] = [];
+
   form: FormGroup;
 
-  constructor(private fb: FormBuilder, private subjectsService: SubjectsService) {
+  constructor(private subjectsService: SubjectsService, private fb: FormBuilder) {
     this.timeOptions = this.buildTimeOptions();
     this.form = this.createForm();
   }
@@ -73,22 +73,22 @@ export class AddSubjectModal {
   private createForm() {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
-      module: ['Q1' as ModuleQuarter, [Validators.required]],
-
+      module: ['Q1', [Validators.required]],
       professor: [''],
       section: [''],
-
       university: [''],
       career: [''],
       careerOther: [''],
-
       description: [''],
-
       color: ['#2563EB', [Validators.required]],
       icon: ['📚', [Validators.required]],
-
       schedule: this.fb.array([]),
     });
+  }
+
+  closeModal() {
+    if (this.saving) return;
+    this.close.emit({ saved: false });
   }
 
   pickColor(c: string) {
@@ -123,21 +123,27 @@ export class AddSubjectModal {
   }
 
   private extractSelectedDays(daysValue: Record<WeekdayKey, boolean>): WeekdayKey[] {
-    return (Object.keys(daysValue) as WeekdayKey[]).filter(k => daysValue[k]);
+    return (Object.keys(daysValue) as WeekdayKey[]).filter(k => !!daysValue[k]);
   }
 
   private normalizeSchedule(): SubjectScheduleRow[] {
     const mapped = this.scheduleArray.controls.map(ctrl => {
       const v: any = ctrl.value;
+
       const days = this.extractSelectedDays(v.days || {});
       if (!days.length) return null;
 
       const start = (v.start || '').trim();
       const end = (v.end || '').trim();
-      if (!start || !end) throw new Error('Si seleccionas días, debes poner hora inicio y fin.');
+
+      if (!start || !end) {
+        throw new Error('Si seleccionas días en el horario, debes poner hora inicio y fin.');
+      }
 
       const roomRaw = (v.room || '').trim();
-      return roomRaw ? { days, start, end, room: roomRaw } : { days, start, end };
+      const row: SubjectScheduleRow = roomRaw ? { days, start, end, room: roomRaw } : { days, start, end };
+
+      return row;
     });
 
     return mapped.filter((x): x is SubjectScheduleRow => x !== null);
@@ -158,14 +164,11 @@ export class AddSubjectModal {
         options.push({ value: `${pad(h)}:${pad(m)}`, label: toLabel(h, m) });
       }
     }
+
     return options;
   }
 
-  cancel() {
-    this.close.emit({ saved: false });
-  }
-
-  async save() {
+  async saveSubject() {
     this.errorMsg = '';
 
     if (this.form.invalid) {
@@ -178,16 +181,17 @@ export class AddSubjectModal {
 
       const v: any = this.form.value;
       const schedule = this.normalizeSchedule();
-      const careerFinal = v.career === 'Otra' ? (v.careerOther || '').trim() : (v.career || '').trim();
+      const careerFinal =
+        v.career === 'Otra' ? (v.careerOther || '').trim() : (v.career || '').trim();
 
       await this.subjectsService.createSubjectForUser(this.uid, {
-        name: v.name,
+        name: (v.name || '').trim(),
         module: v.module,
-        professor: v.professor,
-        section: v.section,
-        university: v.university,
+        professor: (v.professor || '').trim(),
+        section: (v.section || '').trim(),
+        university: (v.university || '').trim(),
         career: careerFinal,
-        description: v.description,
+        description: (v.description || '').trim(),
         color: v.color,
         icon: v.icon,
         schedule,

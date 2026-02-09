@@ -1,18 +1,15 @@
-<div class="jm-backdrop" (click)="cancel()"></div>
+<div class="jm-backdrop" (click)="closeModal()"></div>
 
 <div class="jm-modal" (click)="$event.stopPropagation()">
-
-  <!-- Header -->
   <div class="jm-modal-head">
     <div class="jm-modal-head-left">
       <h2>Agregar materia</h2>
       <span>Completa la información básica y el horario (opcional).</span>
     </div>
-    <button class="jm-icon-btn" type="button" (click)="cancel()">✕</button>
+    <button class="jm-icon-btn" type="button" (click)="closeModal()">✕</button>
   </div>
 
-  <!-- Body -->
-  <form class="jm-modal-body" [formGroup]="form" (ngSubmit)="save()">
+  <form class="jm-modal-body" [formGroup]="form" (ngSubmit)="saveSubject()">
     <div class="jm-section">Información de la materia</div>
 
     <div class="jm-row jm-row-2">
@@ -69,7 +66,7 @@
       </div>
     </div>
 
-    <div class="jm-row jm-row-2">
+    <div class="jm-row jm-row-2 jm-spaced-cols">
       <div class="jm-field">
         <label>Color de la card</label>
         <div class="jm-chips">
@@ -86,7 +83,7 @@
 
       <div class="jm-field">
         <label>Icono</label>
-        <div class="jm-chips">
+        <div class="jm-chips jm-icons">
           <button
             type="button"
             class="jm-icon"
@@ -102,7 +99,7 @@
     <div class="jm-row">
       <div class="jm-field">
         <label>Descripción (opcional)</label>
-        <textarea rows="3" formControlName="description" placeholder="Ej: temas, tareas, evaluación..."></textarea>
+        <textarea rows="3" formControlName="description" placeholder="Ej: temas principales, enfoque, tareas, evaluación..."></textarea>
       </div>
     </div>
 
@@ -153,9 +150,8 @@
 
     <div class="jm-error" *ngIf="errorMsg">{{ errorMsg }}</div>
 
-    <!-- Footer -->
     <div class="jm-footer">
-      <button type="button" class="jm-btn jm-btn-ghost" (click)="cancel()">Cancelar</button>
+      <button type="button" class="jm-btn jm-btn-ghost" (click)="closeModal()" [disabled]="saving">Cancelar</button>
       <button type="submit" class="jm-btn jm-btn-primary" [disabled]="saving">
         {{ saving ? 'Guardando...' : 'Guardar materia' }}
       </button>
