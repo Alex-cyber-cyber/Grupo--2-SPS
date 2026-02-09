@@ -1,0 +1,79 @@
+<div class="jm-subjects">
+  <div class="jm-header">
+    <div class="jm-title">
+      <h1>Mis Materias</h1>
+      <p>Agrega tus materias y administra horarios y contenido.</p>
+    </div>
+
+    <div class="jm-header-actions">
+      <button class="jm-icon-action" type="button" (click)="toggleRefresh($event)" aria-label="Actualizar">
+        <span class="jm-refresh" [class.is-spinning]="loading">⟳</span>
+      </button>
+
+      <button class="jm-btn jm-btn-primary" type="button" (click)="openAddModal()">
+        + Agregar materia
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="subjects.length === 0" class="jm-empty">
+    <div class="jm-empty-box">
+      No tienes materias agregadas
+    </div>
+  </div>
+
+  <div class="jm-grid" *ngIf="subjects.length > 0">
+    <button
+      class="jm-card"
+      type="button"
+      *ngFor="let subject of subjects"
+      (click)="openSubject(subject.id)"
+      [style.borderColor]="subject.color || '#2563EB'">
+
+      <div class="jm-card-top">
+        <div class="jm-card-left">
+          <div class="jm-card-icon" [style.background]="subject.color || '#2563EB'">
+            {{ subject.icon || '📚' }}
+          </div>
+
+          <div class="jm-card-text">
+            <div class="jm-card-name">{{ subject.name }}</div>
+            <div class="jm-card-meta">
+              {{ subject.module || '' }}
+              <span *ngIf="subject.section">• {{ subject.section }}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          class="jm-card-x"
+          type="button"
+          (click)="archiveSubject(subject.id); $event.stopPropagation()"
+          aria-label="Archivar">
+          ✕
+        </button>
+      </div>
+
+      <div class="jm-card-desc" *ngIf="subject.description">
+        {{ subject.description }}
+      </div>
+
+      <div class="jm-card-actions">
+        <button class="jm-btn jm-btn-ghost" type="button" (click)="openSubject(subject.id); $event.stopPropagation()">
+          Contenido
+        </button>
+
+        <button class="jm-btn jm-btn-primary" type="button" (click)="generateGuide(subject.id); $event.stopPropagation()">
+          Generar guía
+        </button>
+      </div>
+    </button>
+  </div>
+
+<app-add-subject-modal
+  *ngIf="showAddModal && uid"
+  [uid]="uid"
+  (close)="onModalClose($event)">
+</app-add-subject-modal>
+
+</div>

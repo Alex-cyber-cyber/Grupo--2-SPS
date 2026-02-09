@@ -1,0 +1,164 @@
+<div class="jm-backdrop" (click)="cancel()"></div>
+
+<div class="jm-modal" (click)="$event.stopPropagation()">
+
+  <!-- Header -->
+  <div class="jm-modal-head">
+    <div class="jm-modal-head-left">
+      <h2>Agregar materia</h2>
+      <span>Completa la información básica y el horario (opcional).</span>
+    </div>
+    <button class="jm-icon-btn" type="button" (click)="cancel()">✕</button>
+  </div>
+
+  <!-- Body -->
+  <form class="jm-modal-body" [formGroup]="form" (ngSubmit)="save()">
+    <div class="jm-section">Información de la materia</div>
+
+    <div class="jm-row jm-row-2">
+      <div class="jm-field">
+        <label>Nombre de la materia <b>*</b></label>
+        <input type="text" formControlName="name" placeholder="Ej: Programación, Cálculo, Física..." />
+        <small *ngIf="form.get('name')?.touched && form.get('name')?.invalid">
+          Escribe un nombre válido (mínimo 3 caracteres).
+        </small>
+      </div>
+
+      <div class="jm-field">
+        <label>Módulo <b>*</b></label>
+        <select formControlName="module">
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+          <option value="Q3">Q3</option>
+          <option value="Q4">Q4</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="jm-row jm-row-2">
+      <div class="jm-field">
+        <label>Profesor (opcional)</label>
+        <input type="text" formControlName="professor" placeholder="Ej: Ing. López" />
+      </div>
+
+      <div class="jm-field">
+        <label>Sección / Grupo (opcional)</label>
+        <input type="text" formControlName="section" placeholder="Ej: A, B, Noche..." />
+      </div>
+    </div>
+
+    <div class="jm-row jm-row-2">
+      <div class="jm-field">
+        <label>Universidad (opcional)</label>
+        <input type="text" formControlName="university" placeholder="Ej: CEUTEC, UNITEC..." />
+      </div>
+
+      <div class="jm-field">
+        <label>Carrera (opcional)</label>
+        <select formControlName="career">
+          <option value="">Selecciona una carrera</option>
+          <option *ngFor="let c of careerOptions" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="jm-row" *ngIf="form.get('career')?.value === 'Otra'">
+      <div class="jm-field">
+        <label>Escribe tu carrera</label>
+        <input type="text" formControlName="careerOther" placeholder="Ej: Ingeniería Industrial..." />
+      </div>
+    </div>
+
+    <div class="jm-row jm-row-2">
+      <div class="jm-field">
+        <label>Color de la card</label>
+        <div class="jm-chips">
+          <button
+            type="button"
+            class="jm-color"
+            *ngFor="let c of colors"
+            [style.background]="c"
+            (click)="pickColor(c)"
+            [class.is-selected]="form.get('color')?.value === c">
+          </button>
+        </div>
+      </div>
+
+      <div class="jm-field">
+        <label>Icono</label>
+        <div class="jm-chips">
+          <button
+            type="button"
+            class="jm-icon"
+            *ngFor="let i of icons"
+            (click)="pickIcon(i)"
+            [class.is-selected]="form.get('icon')?.value === i">
+            {{ i }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="jm-row">
+      <div class="jm-field">
+        <label>Descripción (opcional)</label>
+        <textarea rows="3" formControlName="description" placeholder="Ej: temas, tareas, evaluación..."></textarea>
+      </div>
+    </div>
+
+    <div class="jm-section">Horario (opcional)</div>
+
+    <div class="jm-schedule" formArrayName="schedule">
+      <div class="jm-schedule-head">
+        <div class="jm-schedule-text">Agrega varios horarios si la clase se repite en distintos días.</div>
+        <button type="button" class="jm-btn jm-btn-ghost" (click)="addScheduleRow()">+ Agregar horario</button>
+      </div>
+
+      <div class="jm-schedule-row" *ngFor="let row of scheduleArray.controls; let i = index" [formGroupName]="i">
+        <div class="jm-days" formGroupName="days">
+          <label class="jm-day" *ngFor="let d of weekdays">
+            <input type="checkbox" [formControlName]="d.key" />
+            <span>{{ d.label }}</span>
+          </label>
+        </div>
+
+        <div class="jm-times">
+          <div class="jm-field">
+            <label>Inicio</label>
+            <select formControlName="start">
+              <option value="">Selecciona</option>
+              <option *ngFor="let t of timeOptions" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+
+          <div class="jm-field">
+            <label>Fin</label>
+            <select formControlName="end">
+              <option value="">Selecciona</option>
+              <option *ngFor="let t of timeOptions" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+
+          <div class="jm-field">
+            <label>Aula</label>
+            <input type="text" formControlName="room" placeholder="Ej: A-12" />
+          </div>
+
+          <button type="button" class="jm-btn jm-btn-danger" (click)="removeScheduleRow(i)">Eliminar</button>
+        </div>
+      </div>
+
+      <div class="jm-hint">Si seleccionas días, debes poner hora inicio y fin.</div>
+    </div>
+
+    <div class="jm-error" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <!-- Footer -->
+    <div class="jm-footer">
+      <button type="button" class="jm-btn jm-btn-ghost" (click)="cancel()">Cancelar</button>
+      <button type="submit" class="jm-btn jm-btn-primary" [disabled]="saving">
+        {{ saving ? 'Guardando...' : 'Guardar materia' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -8,18 +8,16 @@ html, body {
   background-color: #f8f9fa;
 }
 
-/* Layout principal */
 .dashboard {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  overflow: hidden; /* nada de scroll */
+  overflow: hidden;
 }
 
-/* Topbar sobre todo */
 app-topbar {
-  position: fixed; /* fijo sobre sidebar y contenido */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -27,26 +25,25 @@ app-topbar {
   z-index: 1000;
 }
 
-/* Contenedor debajo del topbar */
 .content-wrapper {
   display: flex;
   flex: 1;
-  height: 100%;   /* ocupa todo el espacio restante */
+  width: 100%;
+  padding-top: 70px;
+  box-sizing: border-box;
   overflow: hidden;
-  margin-top: 0;  /* sin espacio extra */
 }
 
-/* Sidebar gordito */
 app-sidebar {
   width: 300px;
-  height: 100%;
   flex-shrink: 0;
+  height: calc(100vh - 70px);
+  overflow: hidden;
 }
 
-/* Contenido principal */
 .main-content {
   flex: 1;
-  padding: 20px 30px;
+  padding: 0px 0px;
   height: 100%;
-  overflow-y: hidden; /* nada de scroll */
+  overflow-y: hidden;
 }
