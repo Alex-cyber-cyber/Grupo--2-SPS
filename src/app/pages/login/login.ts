@@ -1,7 +1,14 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -12,11 +19,13 @@ import { RouterModule } from '@angular/router';
 })
 export class Login {
   private fb = inject(FormBuilder);
+  private router = inject(Router);
+  authService: AuthService = inject(AuthService);
 
-  submitted = false;
-  isLoading = false;
-  showPassword = false;
-  errorMsg = '';
+  submitted = signal(false);
+  isLoading = signal(false);
+  showPassword = signal(false);
+  errorMsg = signal('');
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email, this.unitecEmailValidator]],
@@ -26,10 +35,10 @@ export class Login {
 
   unitecEmailValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const email = control.value.toLowerCase();
     const isValid = email.endsWith('@unitec.edu');
-    
+
     return isValid ? null : { unitecEmail: true };
   }
 
@@ -46,42 +55,44 @@ export class Login {
   }
 
   togglePassword() {
-    this.showPassword = !this.showPassword;
+    this.showPassword.set(!this.showPassword());
   }
 
   onForgot(ev: Event) {
     ev.preventDefault();
-    this.errorMsg = 'Redirigiendo a recuperación de contraseña...';
-    setTimeout(() => (this.errorMsg = ''), 3000);
+    this.errorMsg.set('Redirigiendo a recuperación de contraseña...');
+    setTimeout(() => this.errorMsg.set(''), 3000);
   }
 
-  onGoogle() {
-    this.errorMsg = 'Conectando con Google...';
-    setTimeout(() => (this.errorMsg = ''), 3000);
+  async onGoogle() {
+    try {
+      await this.authService.loginWithGoogle();
+      await this.router.navigateByUrl('/dashboard', { replaceUrl: true });
+    } catch (error) {
+      this.errorMsg.set('Error al iniciar sesión con Google');
+      setTimeout(() => this.errorMsg.set(''), 3000);
+    }
   }
 
   async onSubmit() {
-    this.submitted = true;
-    this.errorMsg = '';
+    this.submitted.set(true);
+    this.errorMsg.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      
-      if (this.email.errors?.['unitecEmail']) {
-        this.errorMsg = 'Solo se permiten correos institucionales @unitec.edu';
-      }
-      
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     try {
-      await new Promise(r => setTimeout(r, 1500));
+      await this.authService.login(this.email.value!, this.password.value!);
+
+      await this.router.navigateByUrl('/dashboard', { replaceUrl: true });
     } catch (e: any) {
-      this.errorMsg = e?.message ?? 'Error al iniciar sesión';
+      this.errorMsg.set(e?.code ?? e?.message ?? 'Error al iniciar sesión');
     } finally {
-      this.isLoading = false;
+      this.isLoading.set(false);
     }
   }
 }
