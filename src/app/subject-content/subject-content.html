@@ -1,48 +1,71 @@
 <div class="content-page">
   <h2>Contenidos</h2>
 
-  <!-- Crear contenido manual -->
-  <div class="new-content">
-    <input type="text" #newTitle placeholder="Nuevo título" />
-    <input type="text" #newTags placeholder="Tags separados por coma" />
-    <button (click)="addNewContent(newTitle, newTags)">
-      Agregar Contenido
+  <button class="add-btn" (click)="toggleAdd()">
+    + Agregar contenido
+  </button>
+
+  <div class="add-options" *ngIf="showAdd">
+    <button (click)="selectType('file')">📄 Subir documento</button>
+    <button (click)="selectType('text')">📝 Agregar texto</button>
+  </div>
+
+  <!-- ARCHIVO -->
+  <div class="card" *ngIf="selectedType === 'file'">
+    <input type="text" placeholder="Título del archivo" #fileTitle />
+    <input type="text" placeholder="Tags separados por coma" #fileTags />
+    <input type="file" #fileInput />
+    <button (click)="uploadFileWithInfo(fileInput, fileTitle, fileTags)">
+      Subir
     </button>
   </div>
 
-  <!-- Subir archivo -->
-  <div class="upload-file">
-    <input type="file" (change)="onFileSelected($event)" />
+  <!-- TEXTO -->
+  <div class="card" *ngIf="selectedType === 'text'">
+    <input type="text" placeholder="Título del texto" #textTitle />
+    <input type="text" placeholder="Tags separados por coma" #textTags />
+    <textarea placeholder="Escribe aquí" #textContent></textarea>
+    <button (click)="pasteTextManual(textTitle, textTags, textContent)">
+      Guardar
+    </button>
   </div>
 
-  <!-- Pegar texto -->
-  <div class="paste-text">
-    <textarea #txt placeholder="Pega tu texto aquí"></textarea>
-    <button (click)="pasteTextFromTextarea(txt)">Agregar Texto</button>
+  <!-- CONTENIDOS -->
+  <div class="content-grid" *ngIf="contents().length > 0">
+    <div class="content-card" *ngFor="let c of contents()">
+
+      <!-- NORMAL -->
+      <ng-container *ngIf="editingContentId !== c.id; else editMode">
+        <h4>{{ c.title }}</h4>
+        <p *ngIf="c.tags?.length">#{{ c.tags.join(' #') }}</p>
+
+        <div class="actions">
+          <button (click)="openContent(c)">Ver</button>
+          <button *ngIf="c.extractedText" (click)="startEdit(c)">
+            Editar
+          </button>
+          <button class="danger" (click)="deleteContent(c)">
+            Eliminar
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- EDICIÓN -->
+      <ng-template #editMode>
+        <input type="text" [(ngModel)]="editingTitle" />
+        <input type="text" [(ngModel)]="editingTags" />
+        <textarea [(ngModel)]="editingText"></textarea>
+
+        <div class="actions">
+          <button (click)="saveEditedText(c)">Guardar</button>
+          <button class="danger" (click)="cancelEdit()">Cancelar</button>
+        </div>
+      </ng-template>
+
+    </div>
   </div>
 
-  <!-- Lista de contenidos -->
-  <div *ngIf="contents().length === 0" class="no-content">
-    No hay contenidos
-  </div>
-
-  <ul *ngIf="contents().length > 0" class="contents-list">
-    <li *ngFor="let c of contents()" class="content-item">
-      
-      <!-- Input para editar título -->
-      <input 
-        type="text" 
-        [value]="c.title" 
-        #titleInput 
-        (blur)="editContent(c, titleInput.value, c.tags)" 
-      />
-
-      <!-- Mostrar tags -->
-      <span *ngIf="c.tags?.length" class="tags">[{{ c.tags.join(', ') }}]</span>
-
-      <!-- Botones -->
-      <button (click)="openContent(c)">Ver</button>
-      <button (click)="deleteContent(c)">Eliminar</button>
-    </li>
-  </ul>
+  <p class="empty" *ngIf="contents().length === 0">
+    Aún no has subido contenidos
+  </p>
 </div>
