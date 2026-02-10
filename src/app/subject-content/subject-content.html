@@ -1,0 +1,48 @@
+<div class="content-page">
+  <h2>Contenidos</h2>
+
+  <!-- Crear contenido manual -->
+  <div class="new-content">
+    <input type="text" #newTitle placeholder="Nuevo título" />
+    <input type="text" #newTags placeholder="Tags separados por coma" />
+    <button (click)="addNewContent(newTitle, newTags)">
+      Agregar Contenido
+    </button>
+  </div>
+
+  <!-- Subir archivo -->
+  <div class="upload-file">
+    <input type="file" (change)="onFileSelected($event)" />
+  </div>
+
+  <!-- Pegar texto -->
+  <div class="paste-text">
+    <textarea #txt placeholder="Pega tu texto aquí"></textarea>
+    <button (click)="pasteTextFromTextarea(txt)">Agregar Texto</button>
+  </div>
+
+  <!-- Lista de contenidos -->
+  <div *ngIf="contents().length === 0" class="no-content">
+    No hay contenidos
+  </div>
+
+  <ul *ngIf="contents().length > 0" class="contents-list">
+    <li *ngFor="let c of contents()" class="content-item">
+      
+      <!-- Input para editar título -->
+      <input 
+        type="text" 
+        [value]="c.title" 
+        #titleInput 
+        (blur)="editContent(c, titleInput.value, c.tags)" 
+      />
+
+      <!-- Mostrar tags -->
+      <span *ngIf="c.tags?.length" class="tags">[{{ c.tags.join(', ') }}]</span>
+
+      <!-- Botones -->
+      <button (click)="openContent(c)">Ver</button>
+      <button (click)="deleteContent(c)">Eliminar</button>
+    </li>
+  </ul>
+</div>

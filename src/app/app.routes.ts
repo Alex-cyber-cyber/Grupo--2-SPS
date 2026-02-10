@@ -22,7 +22,13 @@ export const routes: Routes = [
     children: [
       { path: '', component: Principal },
       { path: 'subjects', component: Subjects },
-      { path: '**', redirectTo: 'dashboard' },
+      {
+         path: 'subjects/:subjectId/content',
+  loadComponent: () =>
+    import('./subject-content/subject-content')
+      .then(m => m.SubjectContentComponent),
+      },
+      { path: '**', redirectTo: '' },
     ],
   },
 ];
