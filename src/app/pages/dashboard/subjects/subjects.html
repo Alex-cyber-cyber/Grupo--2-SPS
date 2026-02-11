@@ -27,7 +27,6 @@
       class="jm-card"
       type="button"
       *ngFor="let subject of subjects"
-      (click)="openSubject(subject.id)"
       [style.borderColor]="subject.color || '#2563EB'">
 
       <div class="jm-card-top">
@@ -59,11 +58,17 @@
       </div>
 
       <div class="jm-card-actions">
-        <button class="jm-btn jm-btn-ghost" type="button" (click)="openSubject(subject.id); $event.stopPropagation()">
+        <button
+          class="jm-btn jm-btn-ghost"
+          type="button"
+          (click)="openSubject(subject.id); $event.stopPropagation()">
           Contenido
         </button>
 
-        <button class="jm-btn jm-btn-primary" type="button" (click)="generateGuide(subject.id); $event.stopPropagation()">
+        <button
+          class="jm-btn jm-btn-primary"
+          type="button"
+          (click)="generateGuide(subject.id); $event.stopPropagation()">
           Generar guía
         </button>
       </div>

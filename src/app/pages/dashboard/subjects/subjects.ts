@@ -2,7 +2,6 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, Unsubscribe, onAuthStateChanged } from '@angular/fire/auth';
-
 import { SubjectsService } from '../../../services/subjects.service';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
 
@@ -118,18 +117,22 @@ export class Subjects implements OnInit, OnDestroy {
   }
 
   async archiveSubject(subjectId: string) {
-    if (!this.uid) return;
+  if (!this.uid) return;
 
-    const before = [...this.subjects];
-    this.subjects = this.subjects.filter(s => s.id !== subjectId);
+  const ok = confirm('⚠️ Esto eliminará la materia y TODO su contenido para TODOS. ¿Seguro?');
+  if (!ok) return;
 
-    try {
-      await this.subjectsService.archiveSubjectForUser(this.uid, subjectId, true);
-    } catch {
-      this.subjects = before;
-    }
+  const before = [...this.subjects];
+  this.subjects = this.subjects.filter(s => s.id !== subjectId);
+
+  try {
+    await this.subjectsService.deleteSubjectEverywhere(subjectId);
+  } catch (e) {
+    console.error(e);
+    this.subjects = before; 
+    alert('No se pudo eliminar la materia 😓');
   }
-
+}
   openSubject(subjectId: string) {
     this.router.navigate(['/dashboard/subjects', subjectId, 'content']);
   }

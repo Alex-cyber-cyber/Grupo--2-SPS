@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
 import { ContentService } from '../services/subject-contents.service';
 import { Unsubscribe } from 'firebase/firestore';
@@ -31,7 +31,8 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private contentService: ContentService,
-    private auth: Auth
+    private auth: Auth,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -47,8 +48,20 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.unsubscribe) this.unsubscribe();
   }
 
+  // 🔙 Regresar (vuelve a la página anterior)
+  goBack() {
+    window.history.back();
+  }
+
+  // 🔘 Mostrar/Ocultar opciones agregar
   toggleAdd() {
     this.showAdd = !this.showAdd;
+    this.selectedType = null;
+  }
+
+  // ❌ Cerrar formulario
+  closeForm() {
+    this.showAdd = false;
     this.selectedType = null;
   }
 
@@ -80,6 +93,8 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     fileInput.value = '';
     titleInput.value = '';
     tagsInput.value = '';
+
+    this.closeForm(); // 🔥 se cierra automáticamente
   }
 
   // 🔹 Guardar texto
@@ -106,6 +121,8 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     textarea.value = '';
     titleInput.value = '';
     tagsInput.value = '';
+
+    this.closeForm(); // 🔥 se cierra automáticamente
   }
 
   // 🔹 Abrir contenido

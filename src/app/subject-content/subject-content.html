@@ -1,56 +1,72 @@
-<div class="content-page">
-  <h2>Contenidos</h2>
+<div class="page-wrapper">
+    <div class="top-actions">
+    <button class="back-btn" (click)="goBack()">
+     ←
+    </button>
+   
+    <button 
+      class="close-btn" 
+      *ngIf="showAdd || selectedType"
+      (click)="closeForm()">
+      Cerrar
+    </button>
+  </div>
+  <div class="page-header">
+    <div>
+      <h2>Contenidos</h2>
+      <p>Administra documentos y textos de esta materia</p>
+    </div>
 
-  <button class="add-btn" (click)="toggleAdd()">
-    + Agregar contenido
-  </button>
-
-  <div class="add-options" *ngIf="showAdd">
-    <button (click)="selectType('file')">📄 Subir documento</button>
-    <button (click)="selectType('text')">📝 Agregar texto</button>
+    <button class="primary-btn" (click)="toggleAdd()">
+      + Agregar contenido
+    </button>
   </div>
 
-  <!-- ARCHIVO -->
+
+  <div class="add-options" *ngIf="showAdd">
+    <button (click)="selectType('file')">📄 Documento</button>
+    <button (click)="selectType('text')">📝 Texto</button>
+  </div>
+
+
   <div class="card" *ngIf="selectedType === 'file'">
     <input type="text" placeholder="Título del archivo" #fileTitle />
     <input type="text" placeholder="Tags separados por coma" #fileTags />
     <input type="file" #fileInput />
     <button (click)="uploadFileWithInfo(fileInput, fileTitle, fileTags)">
-      Subir
+      Subir archivo
     </button>
   </div>
 
-  <!-- TEXTO -->
+
   <div class="card" *ngIf="selectedType === 'text'">
     <input type="text" placeholder="Título del texto" #textTitle />
     <input type="text" placeholder="Tags separados por coma" #textTags />
-    <textarea placeholder="Escribe aquí" #textContent></textarea>
+    <textarea placeholder="Escribe tu contenido aquí..." #textContent></textarea>
     <button (click)="pasteTextManual(textTitle, textTags, textContent)">
-      Guardar
+      Guardar texto
     </button>
   </div>
 
-  <!-- CONTENIDOS -->
+
   <div class="content-grid" *ngIf="contents().length > 0">
     <div class="content-card" *ngFor="let c of contents()">
 
-      <!-- NORMAL -->
+  
       <ng-container *ngIf="editingContentId !== c.id; else editMode">
         <h4>{{ c.title }}</h4>
-        <p *ngIf="c.tags?.length">#{{ c.tags.join(' #') }}</p>
+        <p class="tags" *ngIf="c.tags?.length">
+          #{{ c.tags.join(' #') }}
+        </p>
 
         <div class="actions">
           <button (click)="openContent(c)">Ver</button>
-          <button *ngIf="c.extractedText" (click)="startEdit(c)">
-            Editar
-          </button>
-          <button class="danger" (click)="deleteContent(c)">
-            Eliminar
-          </button>
+          <button *ngIf="c.extractedText" (click)="startEdit(c)">Editar</button>
+          <button class="danger" (click)="deleteContent(c)">Eliminar</button>
         </div>
       </ng-container>
 
-      <!-- EDICIÓN -->
+
       <ng-template #editMode>
         <input type="text" [(ngModel)]="editingTitle" />
         <input type="text" [(ngModel)]="editingTags" />
@@ -65,7 +81,9 @@
     </div>
   </div>
 
-  <p class="empty" *ngIf="contents().length === 0">
-    Aún no has subido contenidos
-  </p>
+
+  <div class="empty-card" *ngIf="contents().length === 0">
+    <p>No tienes contenidos agregados</p>
+  </div>
+
 </div>
