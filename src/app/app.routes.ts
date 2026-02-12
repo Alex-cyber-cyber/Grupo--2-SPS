@@ -31,4 +31,14 @@ export const routes: Routes = [
       { path: '**', redirectTo: '' },
     ],
   },
+
+
+    {
+    path: 'ai/generate',
+    loadComponent: () =>
+      import('./pages/ai/generate/generate')
+        .then(m => m.Generate)
+  }
 ];
+
+
