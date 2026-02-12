@@ -163,51 +163,61 @@ removeScheduleRow(index: number) {
   this.scheduleArray.removeAt(index);
 }
 
-  async saveSubject() {
-    this.errorMsg = '';
+async saveSubject() {
+  this.errorMsg = '';
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
+  }
+
+  try {
+    this.saving = true;
+
+    const v: any = this.form.value;
+    const schedule = this.normalizeSchedule();
+    const careerFinal =
+      v.career === 'Otra'
+        ? (v.careerOther || '').trim()
+        : (v.career || '').trim();
+
+    const cleanedData: any = {
+      name: (v.name || '').trim(),
+      module: v.module,
+      professor: (v.professor || '').trim(),
+      section: (v.section || '').trim(),
+      university: (v.university || '').trim(),
+      career: careerFinal,
+      description: (v.description || '').trim(),
+      color: v.color,
+      icon: v.icon,
+      schedule: schedule || [],
+    };
+
+    if (this.isEditMode) {
+      // ✏️ EDITAR
+      await this.subjectsService.updateSubject(
+        this.editData.id,
+        cleanedData
+      );
+    } else {
+      // ➕ CREAR
+      await this.subjectsService.createSubjectForUser(
+        this.uid,
+        cleanedData
+      );
     }
 
-    try {
-      this.saving = true;
+    this.close.emit({ saved: true });
 
-      const v: any = this.form.value;
-      const schedule = this.normalizeSchedule();
-      const careerFinal =
-        v.career === 'Otra' ? (v.careerOther || '').trim() : (v.career || '').trim();
-
-      if (this.isEditMode) {
-
-  const cleanedData: any = {
-    name: (v.name || '').trim(),
-    module: v.module,
-    professor: (v.professor || '').trim(),
-    section: (v.section || '').trim(),
-    university: (v.university || '').trim(),
-    career: careerFinal,
-    description: (v.description || '').trim(),
-    color: v.color,
-    icon: v.icon,
-    schedule: schedule || [],
-  };
-
-  await this.subjectsService.updateSubject(
-    this.editData.id,
-    cleanedData
-  );
+  } catch (err: any) {
+    this.errorMsg =
+      err?.message ?? 'Ocurrió un error guardando la materia.';
+  } finally {
+    this.saving = false;
+  }
 }
 
-
-      this.close.emit({ saved: true });
-    } catch (err: any) {
-      this.errorMsg = err?.message ?? 'Ocurrió un error guardando la materia.';
-    } finally {
-      this.saving = false;
-    }
-  }
 
   private extractSelectedDays(daysValue: Record<WeekdayKey, boolean>): WeekdayKey[] {
     return (Object.keys(daysValue) as WeekdayKey[]).filter(k => !!daysValue[k]);
