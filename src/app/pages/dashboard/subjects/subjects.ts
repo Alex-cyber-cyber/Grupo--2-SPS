@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Auth, Unsubscribe, onAuthStateChanged } from '@angular/fire/auth';
 import { SubjectsService } from '../../../services/subjects.service';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
-import { EditSubjectModal } from '../../../edit-subject-modal/edit-subject-modal';
+import { EditSubjectModal } from '../subjects/edit-subject-modal/edit-subject-modal';
 import { FormsModule } from '@angular/forms';
 
 @Component({

@@ -26,7 +26,7 @@ export const routes: Routes = [
         path: 'subjects/:subjectId/content',
         
         loadComponent: () =>
-          import('./subject-content/subject-content')
+          import('../app/pages/dashboard/subjects/subject-content/subject-content')
             .then(m => m.SubjectContentComponent),
 
       },

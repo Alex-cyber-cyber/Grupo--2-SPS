@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SubjectsService, CreateSubjectPayload  } from '../services/subjects.service';
+import { SubjectsService  } from '../../../../services/subjects.service';
 
 @Component({
   selector: 'app-edit-subject-modal',

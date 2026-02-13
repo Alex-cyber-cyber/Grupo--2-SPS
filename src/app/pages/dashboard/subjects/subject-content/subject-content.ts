@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
-import { ContentService } from '../services/subject-contents.service';
+import { ContentService } from '../../../../services/subject-contents.service';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
 
