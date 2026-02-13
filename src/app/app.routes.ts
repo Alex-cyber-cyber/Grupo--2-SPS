@@ -23,10 +23,12 @@ export const routes: Routes = [
       { path: '', component: Principal },
       { path: 'subjects', component: Subjects },
       {
-         path: 'subjects/:subjectId/content',
-  loadComponent: () =>
-    import('./subject-content/subject-content')
-      .then(m => m.SubjectContentComponent),
+        path: 'subjects/:subjectId/content',
+        
+        loadComponent: () =>
+          import('./subject-content/subject-content')
+            .then(m => m.SubjectContentComponent),
+
       },
       { path: '**', redirectTo: '' },
     ],
