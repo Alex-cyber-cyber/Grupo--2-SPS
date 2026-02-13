@@ -16,12 +16,14 @@
     </div>
   </div>
 
+ 
   <div *ngIf="subjects.length === 0" class="jm-empty">
     <div class="jm-empty-box">
       No tienes materias agregadas
     </div>
   </div>
 
+  
   <div class="jm-grid" *ngIf="subjects.length > 0">
     <button
       class="jm-card"
@@ -57,27 +59,43 @@
         {{ subject.description }}
       </div>
 
-      <div class="jm-card-actions">
-        <button
-          class="jm-btn jm-btn-ghost"
-          type="button"
-          (click)="openSubject(subject.id); $event.stopPropagation()">
-          Contenido
-        </button>
+    
+  <div class="jm-card-actions" style="display: flex; gap: 8px;">
+  <button
+    class="jm-btn jm-btn-ghost"
+    type="button"
+    (click)="openSubject(subject.id); $event.stopPropagation()">
+    Contenido
+  </button>
 
-        <button
-          class="jm-btn jm-btn-primary"
-          type="button"
-          (click)="generateGuide(subject.id); $event.stopPropagation()">
-          Generar guía
-        </button>
+  <button
+    class="jm-btn jm-btn-primary"
+    type="button"
+    (click)="generateGuide(subject.id); $event.stopPropagation()">
+    Generar guía
+  </button>
+
+  <button
+    class="jm-btn jm-btn-ghost"
+    type="button"
+    (click)="openEditModal(subject); $event.stopPropagation()">
+    ✏️ Editar
+  </button>
       </div>
     </button>
   </div>
 
+
   <app-add-subject-modal
     *ngIf="showAddModal && uid"
     [uid]="uid"
-    (close)="onModalClose($event)">
+    (close)="onAddModalClose($event)">
   </app-add-subject-modal>
+
+
+  <app-edit-subject-modal
+    *ngIf="editingSubject"
+    [subject]="editingSubject"
+    (close)="onEditModalClose($event)">
+  </app-edit-subject-modal>
 </div>

@@ -27,7 +27,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     private auth: Auth
   ) {}
 
-  // 🔹 Inicialización y suscripción a Firestore
+ 
   ngOnInit() {
     this.subjectId = this.route.snapshot.paramMap.get('subjectId')!;
     
@@ -43,7 +43,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.unsubscribe) this.unsubscribe();
   }
 
-  // 🔹 Subir archivo con título y tags
+
   async uploadFileWithInfo(
     fileInput: HTMLInputElement,
     titleInput: HTMLInputElement,
@@ -67,7 +67,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Pegar texto manualmente
+ 
   async pasteTextManual(
     titleInput: HTMLInputElement,
     tagsInput: HTMLInputElement,
@@ -91,7 +91,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Abrir contenido
+  
   async openContent(content: any) {
     try {
       if (content.storagePath) {
@@ -105,7 +105,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Editar título y tags
+
   async editContent(content: any, newTitle: string, newTags: string[]) {
     try {
       await this.contentService.editContent(
@@ -119,7 +119,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Eliminar contenido
+
   async deleteContent(content: any) {
     try {
       await this.contentService.deleteContent(this.subjectId, content);
@@ -128,13 +128,13 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Mostrar/Ocultar sección para agregar contenido
+  
   toggleAdd() {
     this.showAdd = !this.showAdd;
     this.selectedType = null;
   }
 
-  // 🔹 Seleccionar tipo de contenido a agregar
+
   selectType(type: 'file' | 'text') {
     this.selectedType = type;
   }

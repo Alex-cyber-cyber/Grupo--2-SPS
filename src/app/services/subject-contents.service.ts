@@ -28,10 +28,12 @@ export class ContentService {
     private auth: Auth
   ) {}
 
+  // 📁 subjects/{subjectId}
   private subjectRef(subjectId: string) {
-    return doc(this.firestore, `userSubjects/${subjectId}`);
+    return doc(this.firestore, `subjects/${subjectId}`);
   }
 
+  // 📄 subjects/{subjectId}/contents
   private contentsCollection(subjectId: string) {
     return collection(this.subjectRef(subjectId), 'contents');
   }
@@ -45,7 +47,7 @@ export class ContentService {
     const user = this.auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
 
-    const fileRef = ref(this.storage, `contents/${subjectId}/${file.name}`);
+    const fileRef = ref(this.storage, `contents/${subjectId}/${Date.now()}_${file.name}`);
     await uploadBytes(fileRef, file);
 
     const docRef = await addDoc(this.contentsCollection(subjectId), {
@@ -54,6 +56,7 @@ export class ContentService {
       storagePath: fileRef.fullPath,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      uid: user.uid
     });
 
     return docRef.id;
@@ -67,12 +70,14 @@ export class ContentService {
   ): Promise<string> {
     const user = this.auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
+
     const docRef = await addDoc(this.contentsCollection(subjectId), {
       title,
       tags,
       extractedText: text,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      uid: user.uid
     });
 
     return docRef.id;
@@ -94,7 +99,6 @@ export class ContentService {
       updatedAt: serverTimestamp(),
     });
   }
-
 
   observeContents(subjectId: string, callback: (contents: any[]) => void) {
     const q = query(
@@ -138,10 +142,5 @@ export class ContentService {
 
     const docRef = doc(this.contentsCollection(subjectId), content.id);
     await deleteDoc(docRef);
-  }
-
-
-  async triggerEvent(subjectId: string, contentId: string, event: string) {
-    console.log(`Evento: ${event} -> ${subjectId}/${contentId}`);
   }
 }

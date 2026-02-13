@@ -22,7 +22,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   showAdd = false;
   selectedType: 'file' | 'text' | null = null;
 
-  // 🔹 Variables de edición
   editingContentId: string | null = null;
   editingTitle = '';
   editingText = '';
@@ -36,7 +35,15 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.subjectId = this.route.snapshot.paramMap.get('subjectId')!;
+    const id = this.route.snapshot.paramMap.get('subjectId');
+
+    if (!id) {
+      console.error('No subjectId en la ruta');
+      this.router.navigate(['/dashboard/subjects']);
+      return;
+    }
+
+    this.subjectId = id;
 
     this.unsubscribe = this.contentService.observeContents(
       this.subjectId,
@@ -48,28 +55,29 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.unsubscribe) this.unsubscribe();
   }
 
-  // 🔙 Regresar (vuelve a la página anterior)
+
   goBack() {
     window.history.back();
   }
 
-  // 🔘 Mostrar/Ocultar opciones agregar
+  
   toggleAdd() {
     this.showAdd = !this.showAdd;
     this.selectedType = null;
   }
 
-  // ❌ Cerrar formulario
+  
   closeForm() {
     this.showAdd = false;
     this.selectedType = null;
   }
 
+  
   selectType(type: 'file' | 'text') {
     this.selectedType = type;
   }
 
-  // 🔹 Subir archivo
+ 
   async uploadFileWithInfo(
     fileInput: HTMLInputElement,
     titleInput: HTMLInputElement,
@@ -94,10 +102,10 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     titleInput.value = '';
     tagsInput.value = '';
 
-    this.closeForm(); // 🔥 se cierra automáticamente
+    this.closeForm();
   }
 
-  // 🔹 Guardar texto
+  
   async pasteTextManual(
     titleInput: HTMLInputElement,
     tagsInput: HTMLInputElement,
@@ -122,10 +130,10 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     titleInput.value = '';
     tagsInput.value = '';
 
-    this.closeForm(); // 🔥 se cierra automáticamente
+    this.closeForm();
   }
 
-  // 🔹 Abrir contenido
+
   async openContent(content: any) {
     if (content.storagePath) {
       const url = await this.contentService.getFileURL(
@@ -137,8 +145,13 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Editar texto
+  
   startEdit(content: any) {
+    if (!content.extractedText) {
+      alert('Solo puedes editar contenidos de texto ✍️');
+      return;
+    }
+
     this.editingContentId = content.id;
     this.editingTitle = content.title;
     this.editingText = content.extractedText;
@@ -149,6 +162,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.editingContentId = null;
   }
 
+  
   async saveEditedText(content: any) {
     const tags = this.editingTags
       ? this.editingTags.split(',').map(t => t.trim())
@@ -165,8 +179,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.editingContentId = null;
   }
 
-  // 🔹 Eliminar
+ 
   async deleteContent(content: any) {
+    const ok = confirm('¿Seguro que quieres borrar este contenido?');
+    if (!ok) return;
+
     await this.contentService.deleteContent(this.subjectId, content);
   }
 }

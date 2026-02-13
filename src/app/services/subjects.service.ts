@@ -51,7 +51,7 @@ export class SubjectsService {
     return `${uid}_${subjectId}`;
   }
 
-  /** TRAE SOLO LA RELACIÓN USER-SUBJECT */
+
   async getUserSubjects(uid: string, forceServer = false): Promise<any[]> {
     const ref = query(
       collection(this.firestore, 'userSubjects'),
@@ -66,7 +66,7 @@ export class SubjectsService {
     }));
   }
 
-  /** TRAE LAS MATERIAS COMPLETAS DEL USUARIO */
+
   async getSubjectsForUser(uid: string, forceServer = false): Promise<any[]> {
     const userSubjects = await this.getUserSubjects(uid, forceServer);
     const ids = userSubjects.map(us => us.subjectId).filter(Boolean);
@@ -109,7 +109,7 @@ export class SubjectsService {
       .filter(Boolean);
   }
 
-  /** AGREGAR MATERIA A USUARIO */
+
   async addSubjectToUser(uid: string, subjectId: string): Promise<void> {
     const docId = this.userSubjectDocId(uid, subjectId);
     const ref = doc(this.firestore, `userSubjects/${docId}`);
@@ -122,7 +122,6 @@ export class SubjectsService {
     });
   }
 
-  /** ARCHIVAR MATERIA */
   async archiveSubjectForUser(uid: string, subjectId: string, archived: boolean): Promise<void> {
     const docId = this.userSubjectDocId(uid, subjectId);
     const ref = doc(this.firestore, `userSubjects/${docId}`);
@@ -145,14 +144,14 @@ export class SubjectsService {
     });
   }
 
-  /** ELIMINAR RELACIÓN USUARIO-MATERIA */
+
   async removeSubjectFromUser(uid: string, subjectId: string): Promise<void> {
     const docId = this.userSubjectDocId(uid, subjectId);
     const ref = doc(this.firestore, `userSubjects/${docId}`);
     await deleteDoc(ref);
   }
 
-  /** CREAR MATERIA */
+
   async createSubjectForUser(uid: string, payload: CreateSubjectPayload): Promise<string> {
     const subjectsRef = collection(this.firestore, 'subjects');
 
@@ -188,7 +187,7 @@ export class SubjectsService {
     return docRef.id;
   }
 
-  /** ACTUALIZAR MATERIA */
+  
   async updateSubject(subjectId: string, changes: Partial<CreateSubjectPayload>): Promise<void> {
     const ref = doc(this.firestore, `subjects/${subjectId}`);
     await updateDoc(ref, {
@@ -197,14 +196,14 @@ export class SubjectsService {
     });
   }
 
-  /** 🔥 BORRAR TODO DE UNA MATERIA (subjects + contents + userSubjects) */
+
   async deleteSubjectEverywhere(subjectId: string): Promise<void> {
-    // 1️⃣ Borrar subcolección: contents
+   
     const contentsRef = collection(this.firestore, `subjects/${subjectId}/contents`);
     const contentsSnap = await getDocs(contentsRef);
     await Promise.all(contentsSnap.docs.map(d => deleteDoc(d.ref)));
 
-    // 2️⃣ Borrar relaciones userSubjects de ESA materia (todos los usuarios)
+    
     const relQ = query(
       collection(this.firestore, 'userSubjects'),
       where('subjectId', '==', subjectId)
@@ -212,7 +211,7 @@ export class SubjectsService {
     const relSnap = await getDocs(relQ);
     await Promise.all(relSnap.docs.map(d => deleteDoc(d.ref)));
 
-    // 3️⃣ Borrar el documento principal de la materia
+
     const subjectRef = doc(this.firestore, `subjects/${subjectId}`);
     await deleteDoc(subjectRef);
   }
