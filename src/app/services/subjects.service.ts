@@ -48,6 +48,24 @@ export class SubjectsService {
     return `${uid}_${subjectId}`;
   }
 
+
+
+  async getUserSubjects(uid: string, forceServer = false): Promise<any[]> {
+    const ref = query(
+      collection(this.firestore, 'userSubjects'),
+      where('uid', '==', uid)
+    );
+
+    const snapshot = forceServer ? await getDocsFromServer(ref) : await getDocs(ref);
+
+    return snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+    }));
+  }
+
+
+
   async getSubjectsForUser(uid: string, forceServer = false): Promise<any[]> {
 
   const relationsQuery = query(
@@ -78,6 +96,63 @@ export class SubjectsService {
   });
 
   const subjectSnaps = await Promise.all(subjectPromises);
+
+    return ids
+      .map(id => {
+        const s = subjectById.get(id);
+        if (!s) return null;
+
+        const rel = relBySubjectId.get(id) || {};
+        return {
+          ...s,
+          _archived: !!rel.archived,
+          _archivedAt: rel.archivedAt || null,
+        };
+      })
+      .filter(Boolean);
+  }
+
+
+  async addSubjectToUser(uid: string, subjectId: string): Promise<void> {
+    const docId = this.userSubjectDocId(uid, subjectId);
+    const ref = doc(this.firestore, `userSubjects/${docId}`);
+
+    await setDoc(ref, {
+      uid,
+      subjectId,
+      archived: false,
+      createdAt: serverTimestamp(),
+    });
+  }
+
+  async archiveSubjectForUser(uid: string, subjectId: string, archived: boolean): Promise<void> {
+    const docId = this.userSubjectDocId(uid, subjectId);
+    const ref = doc(this.firestore, `userSubjects/${docId}`);
+
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        uid,
+        subjectId,
+        archived,
+        archivedAt: archived ? serverTimestamp() : null,
+        createdAt: serverTimestamp(),
+      });
+      return;
+    }
+
+    await updateDoc(ref, {
+      archived,
+      archivedAt: archived ? serverTimestamp() : null,
+    });
+  }
+
+
+  async removeSubjectFromUser(uid: string, subjectId: string): Promise<void> {
+    const docId = this.userSubjectDocId(uid, subjectId);
+    const ref = doc(this.firestore, `userSubjects/${docId}`);
+    await deleteDoc(ref);
+  }
 
   const relBySubjectId = new Map<string, any>();
   userSubjects.forEach((us: any) =>
@@ -127,6 +202,34 @@ export class SubjectsService {
 
     return docRef.id;
   }
+
+  
+  async updateSubject(subjectId: string, changes: Partial<CreateSubjectPayload>): Promise<void> {
+    const ref = doc(this.firestore, `subjects/${subjectId}`);
+    await updateDoc(ref, {
+      ...changes,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+
+  async deleteSubjectEverywhere(subjectId: string): Promise<void> {
+   
+    const contentsRef = collection(this.firestore, `subjects/${subjectId}/contents`);
+    const contentsSnap = await getDocs(contentsRef);
+    await Promise.all(contentsSnap.docs.map(d => deleteDoc(d.ref)));
+
+    
+    const relQ = query(
+      collection(this.firestore, 'userSubjects'),
+      where('subjectId', '==', subjectId)
+    );
+    const relSnap = await getDocs(relQ);
+    await Promise.all(relSnap.docs.map(d => deleteDoc(d.ref)));
+
+
+    const subjectRef = doc(this.firestore, `subjects/${subjectId}`);
+    await deleteDoc(subjectRef);
 
   async updateSubject(subjectId: string, data: any): Promise<void> {
     const ref = doc(this.firestore, `subjects/${subjectId}`);

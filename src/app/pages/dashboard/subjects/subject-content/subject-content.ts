@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
-import { ContentService } from '../services/subject-contents.service';
+import { ContentService } from '../../../../services/subject-contents.service';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
 
@@ -22,7 +22,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   showAdd = false;
   selectedType: 'file' | 'text' | null = null;
 
-  // 🔹 Variables de edición
   editingContentId: string | null = null;
   editingTitle = '';
   editingText = '';
@@ -31,11 +30,20 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private contentService: ContentService,
-    private auth: Auth
+    private auth: Auth,
+    private router: Router
   ) {}
 
   ngOnInit() {
-    this.subjectId = this.route.snapshot.paramMap.get('subjectId')!;
+    const id = this.route.snapshot.paramMap.get('subjectId');
+
+    if (!id) {
+      console.error('No subjectId en la ruta');
+      this.router.navigate(['/dashboard/subjects']);
+      return;
+    }
+
+    this.subjectId = id;
 
     this.unsubscribe = this.contentService.observeContents(
       this.subjectId,
@@ -47,16 +55,29 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.unsubscribe) this.unsubscribe();
   }
 
+
+  goBack() {
+    window.history.back();
+  }
+
+  
   toggleAdd() {
     this.showAdd = !this.showAdd;
     this.selectedType = null;
   }
 
+  
+  closeForm() {
+    this.showAdd = false;
+    this.selectedType = null;
+  }
+
+  
   selectType(type: 'file' | 'text') {
     this.selectedType = type;
   }
 
-  // 🔹 Subir archivo
+ 
   async uploadFileWithInfo(
     fileInput: HTMLInputElement,
     titleInput: HTMLInputElement,
@@ -80,9 +101,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     fileInput.value = '';
     titleInput.value = '';
     tagsInput.value = '';
+
+    this.closeForm();
   }
 
-  // 🔹 Guardar texto
+  
   async pasteTextManual(
     titleInput: HTMLInputElement,
     tagsInput: HTMLInputElement,
@@ -106,9 +129,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     textarea.value = '';
     titleInput.value = '';
     tagsInput.value = '';
+
+    this.closeForm();
   }
 
-  // 🔹 Abrir contenido
+
   async openContent(content: any) {
     if (content.storagePath) {
       const url = await this.contentService.getFileURL(
@@ -120,8 +145,13 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // 🔹 Editar texto
+  
   startEdit(content: any) {
+    if (!content.extractedText) {
+      alert('Solo puedes editar contenidos de texto ✍️');
+      return;
+    }
+
     this.editingContentId = content.id;
     this.editingTitle = content.title;
     this.editingText = content.extractedText;
@@ -132,6 +162,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.editingContentId = null;
   }
 
+  
   async saveEditedText(content: any) {
     const tags = this.editingTags
       ? this.editingTags.split(',').map(t => t.trim())
@@ -148,8 +179,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.editingContentId = null;
   }
 
-  // 🔹 Eliminar
+ 
   async deleteContent(content: any) {
+    const ok = confirm('¿Seguro que quieres borrar este contenido?');
+    if (!ok) return;
+
     await this.contentService.deleteContent(this.subjectId, content);
   }
 }
