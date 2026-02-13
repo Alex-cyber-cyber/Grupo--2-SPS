@@ -1,0 +1,33 @@
+<div class="ai-container" *ngIf="!loading && subject">
+
+  <h1>Guía de Estudio</h1>
+  <h2>{{ subject.name }}</h2>
+
+  <div class="ai-card">
+    <h3>Resumen</h3>
+    <p>{{ guide?.resumen }}</p>
+  </div>
+
+  <div class="ai-card">
+    <h3>Objetivos</h3>
+    <ul>
+      <li *ngFor="let obj of guide?.objetivos">
+        {{ obj }}
+      </li>
+    </ul>
+  </div>
+
+  <div class="ai-card">
+    <h3>Plan Semanal</h3>
+    <ul>
+      <li *ngFor="let semana of guide?.planSemanal">
+        {{ semana }}
+      </li>
+    </ul>
+  </div>
+
+</div>
+
+<div *ngIf="loading">
+  Generando guía...
+</div>

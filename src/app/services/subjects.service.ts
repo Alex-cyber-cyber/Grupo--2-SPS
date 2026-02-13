@@ -13,9 +13,10 @@ import {
   getDocsFromServer,
   updateDoc,
   getDoc,
+  getDocFromServer 
+
 } from '@angular/fire/firestore';
 
-export type ModuleQuarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export interface SubjectScheduleRow {
@@ -27,29 +28,26 @@ export interface SubjectScheduleRow {
 
 export interface CreateSubjectPayload {
   name: string;
-  module: ModuleQuarter;
-
+  module: string;
   professor?: string;
   section?: string;
-
   university?: string;
   career?: string;
-
   description?: string;
-
   color?: string;
   icon?: string;
-
   schedule?: SubjectScheduleRow[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class SubjectsService {
+
   constructor(private firestore: Firestore) {}
 
   private userSubjectDocId(uid: string, subjectId: string) {
     return `${uid}_${subjectId}`;
   }
+
 
 
   async getUserSubjects(uid: string, forceServer = false): Promise<any[]> {
@@ -67,32 +65,37 @@ export class SubjectsService {
   }
 
 
+
   async getSubjectsForUser(uid: string, forceServer = false): Promise<any[]> {
-    const userSubjects = await this.getUserSubjects(uid, forceServer);
-    const ids = userSubjects.map(us => us.subjectId).filter(Boolean);
 
-    if (!ids.length) return [];
+  const relationsQuery = query(
+    collection(this.firestore, 'userSubjects'),
+    where('uid', '==', uid)
+  );
 
-    const chunks: string[][] = [];
-    for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+  const relationsSnap = forceServer
+    ? await getDocsFromServer(relationsQuery)
+    : await getDocs(relationsQuery);
 
-    const subjectById = new Map<string, any>();
+  if (relationsSnap.empty) return [];
 
-    for (const chunk of chunks) {
-      const ref = query(
-        collection(this.firestore, 'subjects'),
-        where('__name__', 'in', chunk)
-      );
+  const userSubjects = relationsSnap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
 
-      const snapshot = forceServer ? await getDocsFromServer(ref) : await getDocs(ref);
+  const ids: string[] = userSubjects
+    .map((us: any) => us.subjectId)
+    .filter((id: string) => !!id);
 
-      snapshot.docs.forEach(d => {
-        subjectById.set(d.id, { id: d.id, ...d.data() });
-      });
-    }
+  const subjectPromises = ids.map((id: string) => {
+    const ref = doc(this.firestore, `subjects/${id}`);
+    return forceServer
+      ? getDocFromServer(ref)
+      : getDoc(ref);
+  });
 
-    const relBySubjectId = new Map<string, any>();
-    userSubjects.forEach(us => relBySubjectId.set(us.subjectId, us));
+  const subjectSnaps = await Promise.all(subjectPromises);
 
     return ids
       .map(id => {
@@ -151,38 +154,51 @@ export class SubjectsService {
     await deleteDoc(ref);
   }
 
+  const relBySubjectId = new Map<string, any>();
+  userSubjects.forEach((us: any) =>
+    relBySubjectId.set(us.subjectId, us)
+  );
+
+  const merged = subjectSnaps
+    .map((snap: any) => {
+      if (!snap.exists()) return null;
+
+      const rel = relBySubjectId.get(snap.id) || {};
+
+      return {
+        id: snap.id,
+        ...snap.data(),
+        _archived: !!rel.archived,
+        _archivedAt: rel.archivedAt || null,
+      };
+    })
+    .filter(Boolean);
+
+  return merged;
+}
+
 
   async createSubjectForUser(uid: string, payload: CreateSubjectPayload): Promise<string> {
     const subjectsRef = collection(this.firestore, 'subjects');
 
     const clean = {
-      name: (payload.name || '').trim(),
-      module: payload.module,
-
-      professor: (payload.professor || '').trim(),
-      section: (payload.section || '').trim(),
-
-      university: (payload.university || '').trim(),
-      career: (payload.career || '').trim(),
-
-      description: (payload.description || '').trim(),
-
-      color: payload.color || '#2563EB',
-      icon: payload.icon || '📚',
-
-      schedule: payload.schedule || [],
-
-      isActive: true,
-
+      ...payload,
+      name: payload.name.trim(),
       createdBy: uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
-    if (!clean.name) throw new Error('El nombre de la materia es obligatorio.');
-
     const docRef = await addDoc(subjectsRef, clean);
-    await this.addSubjectToUser(uid, docRef.id);
+
+    await setDoc(
+      doc(this.firestore, `userSubjects/${this.userSubjectDocId(uid, docRef.id)}`),
+      {
+        uid,
+        subjectId: docRef.id,
+        createdAt: serverTimestamp(),
+      }
+    );
 
     return docRef.id;
   }
@@ -214,5 +230,19 @@ export class SubjectsService {
 
     const subjectRef = doc(this.firestore, `subjects/${subjectId}`);
     await deleteDoc(subjectRef);
+
+  async updateSubject(subjectId: string, data: any): Promise<void> {
+    const ref = doc(this.firestore, `subjects/${subjectId}`);
+    await updateDoc(ref, {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  async deleteSubjectCompletely(uid: string, subjectId: string): Promise<void> {
+    const userDocId = this.userSubjectDocId(uid, subjectId);
+
+    await deleteDoc(doc(this.firestore, `userSubjects/${userDocId}`));
+    await deleteDoc(doc(this.firestore, `subjects/${subjectId}`));
   }
 }

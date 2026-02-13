@@ -1,7 +1,15 @@
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, Unsubscribe, onAuthStateChanged } from '@angular/fire/auth';
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { Auth, onAuthStateChanged } from '@angular/fire/auth';
+
+
 import { SubjectsService } from '../../../services/subjects.service';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
 import { EditSubjectModal } from '../subjects/edit-subject-modal/edit-subject-modal';
@@ -14,6 +22,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './subjects.html',
   styleUrls: ['./subjects.css'],
 })
+
 export class Subjects implements OnInit, OnDestroy {
   subjects: any[] = [];
   showAddModal = false;
@@ -21,6 +30,16 @@ export class Subjects implements OnInit, OnDestroy {
   loading = false;
   private refreshSeq = 0;
   private unsubAuth: Unsubscribe | null = null;
+
+export class Subjects implements OnInit {
+
+  subjects: any[] = [];
+  uid: string | null = null;
+  loading = false;
+
+  showModal = false;
+  selectedSubject: any = null;
+
 
  
   editingSubject: any | null = null;
@@ -30,6 +49,7 @@ export class Subjects implements OnInit, OnDestroy {
     private router: Router,
     private auth: Auth
   ) {}
+
 
   ngOnInit() {
     this.unsubAuth = onAuthStateChanged(this.auth, async (user) => {
@@ -43,14 +63,20 @@ export class Subjects implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() {
-    if (this.unsubAuth) this.unsubAuth();
-  }
+  async toggleRefresh(ev?: Event) {
+  ev?.preventDefault();
+  ev?.stopPropagation();
 
-  openAddModal() {
-    if (!this.uid) return;
-    this.showAddModal = true;
+  if (!this.uid) return;
+
+  this.loading = true;
+
+  try {
+    await this.loadSubjects();
+  } finally {
+    this.loading = false;
   }
+}
 
   async onAddModalClose(e: { saved: boolean }) {
     this.showAddModal = false;
@@ -74,12 +100,27 @@ export class Subjects implements OnInit, OnDestroy {
       return;
     }
     this.refresh(true);
+
+  ngOnInit() {
+    onAuthStateChanged(this.auth, async user => {
+      this.uid = user?.uid ?? null;
+      if (this.uid) {
+        await this.loadSubjects();
+      }
+    });
   }
 
-  stopRefresh() {
-    this.refreshSeq++;
-    this.loading = false;
+  async loadSubjects() {
+    if (!this.uid) return;
+    this.subjects = await this.subjectsService.getSubjectsForUser(this.uid);
+
   }
+
+  openAddModal() {
+    this.selectedSubject = null;
+    this.showModal = true;
+  }
+
 
   private withTimeout<T>(p: Promise<T>, ms: number) {
     return new Promise<T>((resolve, reject) => {
@@ -95,10 +136,17 @@ export class Subjects implements OnInit, OnDestroy {
         }
       );
     });
+
+  editSubject(subject: any) {
+    this.selectedSubject = subject;
+    this.showModal = true;
+    
+
   }
 
-  async refresh(forceServer = false) {
+  async deleteSubject(subjectId: string) {
     if (!this.uid) return;
+
     const seq = ++this.refreshSeq;
     this.loading = true;
 
@@ -135,6 +183,19 @@ export class Subjects implements OnInit, OnDestroy {
       console.error(e);
       this.subjects = before;
       alert('No se pudo eliminar la materia 😓');
+
+
+    const confirmDelete = confirm('¿Eliminar materia permanentemente?');
+    if (!confirmDelete) return;
+
+    await this.subjectsService.deleteSubjectCompletely(this.uid, subjectId);
+    await this.loadSubjects();
+  }
+
+  async onModalClose(e: { saved: boolean }) {
+    this.showModal = false;
+    if (e?.saved) {
+      await this.loadSubjects();
     }
   }
 
