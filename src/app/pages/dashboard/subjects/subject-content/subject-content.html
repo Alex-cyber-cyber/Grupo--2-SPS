@@ -1,89 +1,129 @@
 <div class="page-wrapper">
-    <div class="top-actions">
-    <button class="back-btn" (click)="goBack()">
-     ←
-    </button>
-   
-    <button 
-      class="close-btn" 
-      *ngIf="showAdd || selectedType"
-      (click)="closeForm()">
-      Cerrar
-    </button>
-  </div>
   <div class="page-header">
-    <div>
+    <div class="page-header-left">
       <h2>Contenidos</h2>
       <p>Administra documentos y textos de esta materia</p>
     </div>
 
-    <button class="primary-btn" (click)="toggleAdd()">
-      + Agregar contenido
-    </button>
-  </div>
+    <div class="page-header-actions">
+      <button class="primary-btn" type="button" (click)="openCreate()">+ Agregar contenido</button>
 
-
-  <div class="add-options" *ngIf="showAdd">
-    <button (click)="selectType('file')">📄 Documento</button>
-    <button (click)="selectType('text')">📝 Texto</button>
-  </div>
-
-
-  <div class="card" *ngIf="selectedType === 'file'">
-    <input type="text" placeholder="Título del archivo" #fileTitle />
-    <input type="text" placeholder="Tags separados por coma" #fileTags />
-    <input type="file" #fileInput />
-    <button (click)="uploadFileWithInfo(fileInput, fileTitle, fileTags)">
-      Subir archivo
-    </button>
-  </div>
-
-
-  <div class="card" *ngIf="selectedType === 'text'">
-    <input type="text" placeholder="Título del texto" #textTitle />
-    <input type="text" placeholder="Tags separados por coma" #textTags />
-    <textarea placeholder="Escribe tu contenido aquí..." #textContent></textarea>
-    <button (click)="pasteTextManual(textTitle, textTags, textContent)">
-      Guardar texto
-    </button>
-  </div>
-
-
-  <div class="content-grid" *ngIf="contents().length > 0">
-    <div class="content-card" *ngFor="let c of contents()">
-
-  
-      <ng-container *ngIf="editingContentId !== c.id; else editMode">
-        <h4>{{ c.title }}</h4>
-        <p class="tags" *ngIf="c.tags?.length">
-          #{{ c.tags.join(' #') }}
-        </p>
-
-        <div class="actions">
-          <button (click)="openContent(c)">Ver</button>
-          <button *ngIf="c.extractedText" (click)="startEdit(c)">Editar</button>
-          <button class="danger" (click)="deleteContent(c)">Eliminar</button>
-        </div>
-      </ng-container>
-
-
-      <ng-template #editMode>
-        <input type="text" [(ngModel)]="editingTitle" />
-        <input type="text" [(ngModel)]="editingTags" />
-        <textarea [(ngModel)]="editingText"></textarea>
-
-        <div class="actions">
-          <button (click)="saveEditedText(c)">Guardar</button>
-          <button class="danger" (click)="cancelEdit()">Cancelar</button>
-        </div>
-      </ng-template>
-
+      <button
+        mat-icon-button
+        class="ai-btn"
+        type="button"
+        (click)="generateGuide()"
+        aria-label="Crear guía (IA)"
+        matTooltip="Crear guía (IA)"
+        matTooltipClass="jm-tooltip"
+        matTooltipPosition="below">
+        <mat-icon>smart_toy</mat-icon>
+      </button>
     </div>
   </div>
 
+  <div class="top-actions">
+    <button class="back-btn" type="button" (click)="goBack()">← Volver</button>
+  </div>
+
+  <div class="add-panel" *ngIf="panelOpen">
+    <div class="add-panel-head">
+      <div class="add-panel-title">
+        <h3>{{ panelTitle }}</h3>
+        <p>{{ panelSubtitle }}</p>
+      </div>
+
+      <button class="close-x" type="button" (click)="closePanel()">✕</button>
+    </div>
+
+    <div class="add-panel-body">
+      <div class="form-grid">
+        <div class="field">
+          <label>Título del texto</label>
+          <input
+            type="text"
+            [(ngModel)]="formTitle"
+            [readonly]="isView"
+            placeholder="Ej: Resumen de la clase 1" />
+        </div>
+
+        <div class="field">
+          <label>Tags</label>
+          <input
+            type="text"
+            [(ngModel)]="formTags"
+            [readonly]="isView"
+            placeholder="Ej: tarea, examen, unidad1" />
+          <div class="hint">Separados por coma</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contenido</label>
+        <textarea
+          [(ngModel)]="formText"
+          [readonly]="isView"
+          placeholder="Escribe tu contenido aquí..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="cancel-btn" type="button" (click)="closePanel()">Cerrar</button>
+
+        <button
+          class="save-btn"
+          type="button"
+          *ngIf="!isView"
+          (click)="savePanel()">
+          {{ isEdit ? 'Guardar cambios' : 'Guardar texto' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid" *ngIf="contents().length > 0">
+    <div class="content-card" *ngFor="let c of contents()">
+      <div class="content-card-top">
+        <div class="content-title">
+          <h4>{{ c.title }}</h4>
+          <p class="tags" *ngIf="c.tags?.length">#{{ c.tags.join(' #') }}</p>
+        </div>
+
+        <span class="badge">Texto</span>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn" type="button" (click)="openView(c)">Ver</button>
+        <button class="action-btn" type="button" (click)="openEdit(c)">Editar</button>
+        <button class="action-btn action-danger" type="button" (click)="askDelete(c)">Eliminar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="empty-card" *ngIf="contents().length === 0">
     <p>No tienes contenidos agregados</p>
   </div>
 
+  <div class="confirm-backdrop" *ngIf="confirmOpen" (click)="closeConfirm()"></div>
+
+  <div class="confirm-modal" *ngIf="confirmOpen" (click)="$event.stopPropagation()">
+    <div class="confirm-head">
+      <div class="confirm-title">
+        <h4>Eliminar contenido</h4>
+        <p>¿Seguro que deseas eliminar este contenido? Esta acción no se puede deshacer.</p>
+      </div>
+      <button class="close-x" type="button" (click)="closeConfirm()">✕</button>
+    </div>
+
+    <div class="confirm-body">
+      <div class="confirm-item">
+        <div class="confirm-item-title">{{ pendingDelete?.title || 'Contenido' }}</div>
+        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">#{{ pendingDelete.tags.join(' #') }}</div>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="cancel-btn" type="button" (click)="closeConfirm()">Cancelar</button>
+        <button class="danger-btn" type="button" (click)="confirmDelete()">Eliminar</button>
+      </div>
+    </div>
+  </div>
 </div>

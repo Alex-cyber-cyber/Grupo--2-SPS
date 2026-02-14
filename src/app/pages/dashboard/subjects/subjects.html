@@ -7,18 +7,26 @@
 
     <div class="jm-header-actions">
       <button
-        class="jm-icon-action"
+        mat-icon-button
+        class="jm-mat-icon-btn"
         type="button"
         (click)="toggleRefresh($event)"
-        aria-label="Actualizar">
-        <span class="jm-refresh" [class.is-spinning]="loading">⟳</span>
+        [disabled]="loading"
+        aria-label="Actualizar"
+        [matTooltip]="loading ? 'Actualizando...' : 'Actualizar'"
+        matTooltipPosition="below">
+        <mat-icon class="jm-refresh-icon" [class.is-spinning]="loading">refresh</mat-icon>
       </button>
 
       <button
-        class="jm-btn jm-btn-primary"
+        mat-icon-button
+        class="jm-mat-add-btn"
         type="button"
-        (click)="openAddModal()">
-        + Agregar materia
+        (click)="openAddModal()"
+        aria-label="Agregar materia"
+        matTooltip="Agregar materia"
+        matTooltipPosition="below">
+        <mat-icon>add</mat-icon>
       </button>
     </div>
   </div>
@@ -34,13 +42,13 @@
       tabindex="0"
       *ngFor="let subject of subjects"
       [style.borderColor]="subject.color || '#2563EB'"
-      (click)="openSubject(subject.id)">
+      (click)="openSubject(subject.id)"
+      (keydown.enter)="openSubject(subject.id)"
+      (keydown.space)="openSubject(subject.id)">
 
       <div class="jm-card-top">
         <div class="jm-card-left">
-          <div
-            class="jm-card-icon"
-            [style.background]="subject.color || '#2563EB'">
+          <div class="jm-card-icon" [style.background]="subject.color || '#2563EB'">
             {{ subject.icon || '📚' }}
           </div>
 
@@ -55,11 +63,14 @@
         </div>
 
         <button
-          class="jm-card-x"
+          mat-icon-button
+          class="jm-card-x jm-mat-card-x"
           type="button"
           (click)="deleteSubject(subject.id); $event.stopPropagation()"
-          aria-label="Eliminar">
-          ✕
+          aria-label="Eliminar"
+          matTooltip="Eliminar"
+          matTooltipPosition="below">
+          <mat-icon>close</mat-icon>
         </button>
       </div>
 
@@ -67,36 +78,57 @@
         {{ subject.description }}
       </div>
 
-      <div class="jm-card-actions" style="display: flex; gap: 8px;" (click)="$event.stopPropagation()">
+      <div class="jm-card-actions" (click)="$event.stopPropagation()">
         <button
-          class="jm-btn jm-btn-ghost"
+          mat-icon-button
+          class="jm-mat-action-btn jm-action-view"
           type="button"
-          (click)="openSubject(subject.id)">
-          Recursos
+          (click)="openInfo(subject, $event)"
+          aria-label="Ver info"
+          matTooltip="Ver info"
+          matTooltipPosition="below">
+          <mat-icon>visibility</mat-icon>
         </button>
 
         <button
-          class="jm-btn jm-btn-primary"
+          mat-icon-button
+          class="jm-mat-action-btn jm-action-folder"
           type="button"
-          (click)="generateGuide(subject.id)">
-          Crear guía
+          (click)="openSubject(subject.id)"
+          aria-label="Recursos"
+          matTooltip="Recursos"
+          matTooltipPosition="below">
+          <mat-icon>folder</mat-icon>
         </button>
 
         <button
-          class="jm-btn jm-btn-ghost"
+          mat-icon-button
+          class="jm-mat-action-btn jm-action-edit"
           type="button"
-          (click)="editSubject(subject)">
-          Editar
+          (click)="onEditFromInfo(subject)"
+          aria-label="Editar"
+          matTooltip="Editar"
+          matTooltipPosition="below">
+          <mat-icon>edit</mat-icon>
         </button>
       </div>
     </div>
   </div>
 
-<app-add-subject-modal
-  *ngIf="showModal && uid && !selectedSubject"
-  [uid]="uid"
-  (close)="onModalClose($event)">
-</app-add-subject-modal>
+  <app-subject-info-modal
+    *ngIf="infoSubject"
+    [subject]="infoSubject"
+    (close)="closeInfo()"
+    (editSubject)="onEditFromInfo($event)"
+    (deleteSubject)="onDeleteFromInfo($event)">
+  </app-subject-info-modal>
+
+  <app-add-subject-modal
+    *ngIf="showModal && uid && !selectedSubject"
+    [uid]="uid"
+    [editData]="editDataForAddModal"
+    (close)="onModalClose($event)">
+  </app-add-subject-modal>
 
   <app-edit-subject-modal
     *ngIf="showModal && selectedSubject"

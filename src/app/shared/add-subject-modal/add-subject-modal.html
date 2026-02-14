@@ -103,50 +103,7 @@
       </div>
     </div>
 
-    <div class="jm-section">Horario (opcional)</div>
 
-    <div class="jm-schedule" formArrayName="schedule">
-      <div class="jm-schedule-head">
-        <div class="jm-schedule-text">Agrega varios horarios si la clase se repite en distintos días.</div>
-        <button type="button" class="jm-btn jm-btn-ghost" (click)="addScheduleRow()">+ Agregar horario</button>
-      </div>
-
-      <div class="jm-schedule-row" *ngFor="let row of scheduleArray.controls; let i = index" [formGroupName]="i">
-        <div class="jm-days" formGroupName="days">
-          <label class="jm-day" *ngFor="let d of weekdays">
-            <input type="checkbox" [formControlName]="d.key" />
-            <span>{{ d.label }}</span>
-          </label>
-        </div>
-
-        <div class="jm-times">
-          <div class="jm-field">
-            <label>Inicio</label>
-            <select formControlName="start">
-              <option value="">Selecciona</option>
-              <option *ngFor="let t of timeOptions" [value]="t.value">{{ t.label }}</option>
-            </select>
-          </div>
-
-          <div class="jm-field">
-            <label>Fin</label>
-            <select formControlName="end">
-              <option value="">Selecciona</option>
-              <option *ngFor="let t of timeOptions" [value]="t.value">{{ t.label }}</option>
-            </select>
-          </div>
-
-          <div class="jm-field">
-            <label>Aula</label>
-            <input type="text" formControlName="room" placeholder="Ej: A-12" />
-          </div>
-
-          <button type="button" class="jm-btn jm-btn-danger" (click)="removeScheduleRow(i)">Eliminar</button>
-        </div>
-      </div>
-
-      <div class="jm-hint">Si seleccionas días, debes poner hora inicio y fin.</div>
-    </div>
 
     <div class="jm-error" *ngIf="errorMsg">{{ errorMsg }}</div>
 

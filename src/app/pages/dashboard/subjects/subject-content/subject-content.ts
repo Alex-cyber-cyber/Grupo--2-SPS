@@ -1,44 +1,69 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Auth } from '@angular/fire/auth';
-import { ContentService } from '../../../../services/subject-contents.service';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
+
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
+import { ContentService } from '../../../../services/subject-contents.service';
+
+type PanelMode = 'create' | 'view' | 'edit';
 
 @Component({
   selector: 'app-subject-content',
   templateUrl: './subject-content.html',
   styleUrls: ['./subject-content.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule],
 })
 export class SubjectContentComponent implements OnInit, OnDestroy {
-  subjectId: string = '';
+  subjectId = '';
   contents = signal<any[]>([]);
-
   private unsubscribe?: Unsubscribe;
 
-  showAdd = false;
-  selectedType: 'file' | 'text' | null = null;
+  panelOpen = false;
+  panelMode: PanelMode = 'create';
+  activeContentId: string | null = null;
 
-  editingContentId: string | null = null;
-  editingTitle = '';
-  editingText = '';
-  editingTags = '';
+  formTitle = '';
+  formTags = '';
+  formText = '';
+
+  confirmOpen = false;
+  pendingDelete: any = null;
 
   constructor(
     private route: ActivatedRoute,
     private contentService: ContentService,
-    private auth: Auth,
     private router: Router
   ) {}
 
+  get isView() {
+    return this.panelMode === 'view';
+  }
+
+  get isEdit() {
+    return this.panelMode === 'edit';
+  }
+
+  get panelTitle() {
+    if (this.panelMode === 'edit') return 'Editar contenido';
+    if (this.panelMode === 'view') return 'Ver contenido';
+    return 'Agregar contenido';
+  }
+
+  get panelSubtitle() {
+    if (this.panelMode === 'edit') return 'Actualiza la información del texto';
+    if (this.panelMode === 'view') return 'Visualiza la información del texto';
+    return 'Registra un texto para esta materia';
+  }
+
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('subjectId');
-
     if (!id) {
-      console.error('No subjectId en la ruta');
       this.router.navigate(['/dashboard/subjects']);
       return;
     }
@@ -55,135 +80,110 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.unsubscribe) this.unsubscribe();
   }
 
-
   goBack() {
     window.history.back();
   }
 
-  
-  toggleAdd() {
-    this.showAdd = !this.showAdd;
-    this.selectedType = null;
+  generateGuide() {
+    this.router.navigate(['/ai/generate'], { queryParams: { subjectId: this.subjectId } });
   }
 
-  
-  closeForm() {
-    this.showAdd = false;
-    this.selectedType = null;
+  openCreate() {
+    this.panelMode = 'create';
+    this.panelOpen = true;
+    this.activeContentId = null;
+    this.formTitle = '';
+    this.formTags = '';
+    this.formText = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  
-  selectType(type: 'file' | 'text') {
-    this.selectedType = type;
+  openView(content: any) {
+    this.panelMode = 'view';
+    this.panelOpen = true;
+    this.activeContentId = content?.id ?? null;
+    this.formTitle = content?.title ?? '';
+    this.formTags = Array.isArray(content?.tags) ? content.tags.join(', ') : '';
+    this.formText = content?.extractedText ?? '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
- 
-  async uploadFileWithInfo(
-    fileInput: HTMLInputElement,
-    titleInput: HTMLInputElement,
-    tagsInput: HTMLInputElement
-  ) {
-    if (!fileInput.files || fileInput.files.length === 0) return;
-
-    const file = fileInput.files[0];
-    const title = titleInput.value.trim() || file.name;
-    const tags = tagsInput.value
-      ? tagsInput.value.split(',').map(t => t.trim())
-      : [];
-
-    await this.contentService.uploadFile(
-      this.subjectId,
-      file,
-      title,
-      tags
-    );
-
-    fileInput.value = '';
-    titleInput.value = '';
-    tagsInput.value = '';
-
-    this.closeForm();
+  openEdit(content: any) {
+    this.panelMode = 'edit';
+    this.panelOpen = true;
+    this.activeContentId = content?.id ?? null;
+    this.formTitle = content?.title ?? '';
+    this.formTags = Array.isArray(content?.tags) ? content.tags.join(', ') : '';
+    this.formText = content?.extractedText ?? '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  
-  async pasteTextManual(
-    titleInput: HTMLInputElement,
-    tagsInput: HTMLInputElement,
-    textarea: HTMLTextAreaElement
-  ) {
-    const title = titleInput.value.trim() || 'Texto';
-    const text = textarea.value.trim();
-    const tags = tagsInput.value
-      ? tagsInput.value.split(',').map(t => t.trim())
-      : [];
+  closePanel() {
+    this.panelOpen = false;
+    this.activeContentId = null;
+  }
+
+  private parseTags(raw: string): string[] {
+    return (raw || '')
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+  }
+
+  async savePanel() {
+    const title = (this.formTitle || '').trim() || 'Texto';
+    const text = (this.formText || '').trim();
+    const tags = this.parseTags(this.formTags);
 
     if (!text) return;
 
-    await this.contentService.pasteText(
-      this.subjectId,
-      title,
-      text,
-      tags
-    );
-
-    textarea.value = '';
-    titleInput.value = '';
-    tagsInput.value = '';
-
-    this.closeForm();
-  }
-
-
-  async openContent(content: any) {
-    if (content.storagePath) {
-      const url = await this.contentService.getFileURL(
-        content.storagePath
-      );
-      window.open(url);
-    } else if (content.extractedText) {
-      alert(content.extractedText);
-    }
-  }
-
-  
-  startEdit(content: any) {
-    if (!content.extractedText) {
-      alert('Solo puedes editar contenidos de texto ✍️');
+    if (this.panelMode === 'create') {
+      await this.contentService.pasteText(this.subjectId, title, text, tags);
+      this.closePanel();
       return;
     }
 
-    this.editingContentId = content.id;
-    this.editingTitle = content.title;
-    this.editingText = content.extractedText;
-    this.editingTags = content.tags?.join(', ') || '';
+    if (this.panelMode === 'edit') {
+      if (!this.activeContentId) return;
+
+      await this.contentService.updateTextContent(
+        this.subjectId,
+        this.activeContentId,
+        title,
+        text,
+        tags
+      );
+
+      const updated = this.contents().map(x =>
+        x.id === this.activeContentId
+          ? { ...x, title, extractedText: text, tags }
+          : x
+      );
+      this.contents.set(updated);
+
+      this.closePanel();
+      return;
+    }
   }
 
-  cancelEdit() {
-    this.editingContentId = null;
+  askDelete(content: any) {
+    this.pendingDelete = content;
+    this.confirmOpen = true;
   }
 
-  
-  async saveEditedText(content: any) {
-    const tags = this.editingTags
-      ? this.editingTags.split(',').map(t => t.trim())
-      : [];
-
-    await this.contentService.updateTextContent(
-      this.subjectId,
-      content.id,
-      this.editingTitle.trim(),
-      this.editingText.trim(),
-      tags
-    );
-
-    this.editingContentId = null;
+  closeConfirm() {
+    this.confirmOpen = false;
+    this.pendingDelete = null;
   }
 
- 
-  async deleteContent(content: any) {
-    const ok = confirm('¿Seguro que quieres borrar este contenido?');
-    if (!ok) return;
+  async confirmDelete() {
+    if (!this.pendingDelete) return;
 
-    await this.contentService.deleteContent(this.subjectId, content);
+    await this.contentService.deleteContent(this.subjectId, this.pendingDelete);
+
+    const filtered = this.contents().filter(x => x.id !== this.pendingDelete.id);
+    this.contents.set(filtered);
+
+    this.closeConfirm();
   }
 }

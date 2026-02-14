@@ -16,15 +16,6 @@ import {
   getDocFromServer,
 } from '@angular/fire/firestore';
 
-export type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-
-export interface SubjectScheduleRow {
-  days: WeekdayKey[];
-  start: string;
-  end: string;
-  room?: string;
-}
-
 export interface CreateSubjectPayload {
   name: string;
   module: string;
@@ -35,7 +26,6 @@ export interface CreateSubjectPayload {
   description?: string;
   color?: string;
   icon?: string;
-  schedule?: SubjectScheduleRow[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -154,9 +144,17 @@ export class SubjectsService {
   async createSubjectForUser(uid: string, payload: CreateSubjectPayload): Promise<string> {
     const subjectsRef = collection(this.firestore, 'subjects');
 
-    const clean = {
+    const clean: any = {
       ...payload,
-      name: payload.name.trim(),
+      name: (payload.name || '').trim(),
+      module: payload.module,
+      professor: (payload.professor || '').trim(),
+      section: (payload.section || '').trim(),
+      university: (payload.university || '').trim(),
+      career: (payload.career || '').trim(),
+      description: (payload.description || '').trim(),
+      color: payload.color || '#2563EB',
+      icon: payload.icon || '📚',
       createdBy: uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -179,10 +177,21 @@ export class SubjectsService {
 
   async updateSubject(subjectId: string, changes: Partial<CreateSubjectPayload>): Promise<void> {
     const ref = doc(this.firestore, `subjects/${subjectId}`);
-    await updateDoc(ref, {
+
+    const clean: any = {
       ...changes,
+      name: changes.name != null ? (changes.name || '').trim() : undefined,
+      professor: changes.professor != null ? (changes.professor || '').trim() : undefined,
+      section: changes.section != null ? (changes.section || '').trim() : undefined,
+      university: changes.university != null ? (changes.university || '').trim() : undefined,
+      career: changes.career != null ? (changes.career || '').trim() : undefined,
+      description: changes.description != null ? (changes.description || '').trim() : undefined,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    Object.keys(clean).forEach(k => clean[k] === undefined && delete clean[k]);
+
+    await updateDoc(ref, clean);
   }
 
   async deleteSubjectEverywhere(subjectId: string): Promise<void> {

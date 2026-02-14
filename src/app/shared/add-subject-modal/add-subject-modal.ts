@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { SubjectsService, SubjectScheduleRow, WeekdayKey } from '../../services/subjects.service';
+import { SubjectsService, } from '../../services/subjects.service';
 
 @Component({
   selector: 'app-add-subject-modal',
@@ -50,15 +50,6 @@ export class AddSubjectModal implements OnInit {
     'Otra',
   ];
 
-  readonly weekdays: { key: WeekdayKey; label: string }[] = [
-    { key: 'mon', label: 'Lunes' },
-    { key: 'tue', label: 'Martes' },
-    { key: 'wed', label: 'Miércoles' },
-    { key: 'thu', label: 'Jueves' },
-    { key: 'fri', label: 'Viernes' },
-    { key: 'sat', label: 'Sábado' },
-    { key: 'sun', label: 'Domingo' },
-  ];
 
   timeOptions: { value: string; label: string }[] = [];
 
@@ -85,26 +76,6 @@ export class AddSubjectModal implements OnInit {
         icon: this.editData.icon,
       });
 
-      if (this.editData.schedule?.length) {
-        this.editData.schedule.forEach((row: SubjectScheduleRow) => {
-          const group = this.fb.group({
-            days: this.fb.group({
-              mon: [row.days.includes('mon')],
-              tue: [row.days.includes('tue')],
-              wed: [row.days.includes('wed')],
-              thu: [row.days.includes('thu')],
-              fri: [row.days.includes('fri')],
-              sat: [row.days.includes('sat')],
-              sun: [row.days.includes('sun')],
-            }),
-            start: [row.start],
-            end: [row.end],
-            room: [row.room || ''],
-          });
-
-          this.scheduleArray.push(group);
-        });
-      }
     }
   }
 
@@ -175,7 +146,6 @@ async saveSubject() {
     this.saving = true;
 
     const v: any = this.form.value;
-    const schedule = this.normalizeSchedule();
     const careerFinal =
       v.career === 'Otra'
         ? (v.careerOther || '').trim()
@@ -191,7 +161,6 @@ async saveSubject() {
       description: (v.description || '').trim(),
       color: v.color,
       icon: v.icon,
-      schedule: schedule || [],
     };
 
     if (this.isEditMode) {
@@ -219,28 +188,7 @@ async saveSubject() {
 }
 
 
-  private extractSelectedDays(daysValue: Record<WeekdayKey, boolean>): WeekdayKey[] {
-    return (Object.keys(daysValue) as WeekdayKey[]).filter(k => !!daysValue[k]);
-  }
 
-  private normalizeSchedule(): SubjectScheduleRow[] {
-    const mapped = this.scheduleArray.controls.map(ctrl => {
-      const v: any = ctrl.value;
-      const days = this.extractSelectedDays(v.days || {});
-      if (!days.length) return null;
-
-      const start = (v.start || '').trim();
-      const end = (v.end || '').trim();
-      if (!start || !end) {
-        throw new Error('Si seleccionas días en el horario, debes poner hora inicio y fin.');
-      }
-
-      const roomRaw = (v.room || '').trim();
-      return roomRaw ? { days, start, end, room: roomRaw } : { days, start, end };
-    });
-
-    return mapped.filter((x): x is SubjectScheduleRow => x !== null);
-  }
 
   private buildTimeOptions() {
     const options: { value: string; label: string }[] = [];
