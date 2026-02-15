@@ -1,77 +1,135 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Auth, onAuthStateChanged } from '@angular/fire/auth';
+
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { SubjectsService } from '../../../services/subjects.service';
-import { EventsService } from '../../../services/events/events.service';
-import { EVENTS } from '../../../services/events/events.constants';
-
-import { SubjectCardComponent } from '../../../shared/subject-card/subject-card.component';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
-
+import { EditSubjectModal } from './edit-subject-modal/edit-subject-modal';
+import { SubjectInfoModal } from './subject-info-modal/subject-info-modal';
 
 @Component({
   selector: 'app-subjects',
   standalone: true,
-  imports: [CommonModule, SubjectCardComponent, AddSubjectModal],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    AddSubjectModal,
+    EditSubjectModal,
+    SubjectInfoModal,
+  ],
   templateUrl: './subjects.html',
   styleUrls: ['./subjects.css'],
 })
 export class Subjects implements OnInit {
   subjects: any[] = [];
-  uid = 'demo-user';
-  showAddModal = false;
+  uid: string | null = null;
+  loading = false;
+
+  showModal = false;
+  selectedSubject: any = null;
+
+  editDataForAddModal: any = null;
+
+  infoSubject: any = null;
 
   constructor(
     private subjectsService: SubjectsService,
     private router: Router,
-    private events: EventsService
+    private auth: Auth
   ) {}
 
- async ngOnInit() {
-  this.subjects = await this.subjectsService.getSubjectsForUser(this.uid);
-  console.log('SUBJECTS =>', this.subjects);
-}
-
-
-  openAddModal() {
-    this.showAddModal = true;
+  ngOnInit() {
+    onAuthStateChanged(this.auth, async user => {
+      this.uid = user?.uid ?? null;
+      if (this.uid) await this.loadSubjects();
+    });
   }
 
-  async onModalClose(added: boolean) {
-    this.showAddModal = false;
+  async loadSubjects(forceServer = false) {
+    if (!this.uid) return;
+    this.subjects = await this.subjectsService.getSubjectsForUser(this.uid, forceServer);
+  }
 
-    if (added) {
-      this.subjects = await this.subjectsService.getSubjectsForUser(this.uid);
+  async toggleRefresh(ev?: Event) {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    if (!this.uid || this.loading) return;
 
-      this.events.track(EVENTS.SUBJECT_ADDED, {
-        uid: this.uid,
-      });
+    this.loading = true;
+    try {
+      await this.loadSubjects(true);
+    } finally {
+      this.loading = false;
     }
   }
 
-  async removeSubject(subjectId: string) {
-    await this.subjectsService.removeSubjectFromUser(this.uid, subjectId);
-    this.subjects = this.subjects.filter(s => s.id !== subjectId);
+  openAddModal() {
+    this.selectedSubject = null;
+    this.editDataForAddModal = null;
+    this.showModal = true;
+  }
 
-    this.events.track(EVENTS.SUBJECT_REMOVED, {
-      subjectId,
-      uid: this.uid,
-    });
+  editSubject(subject: any) {
+    this.selectedSubject = subject;
+    this.showModal = true;
+  }
+
+  async deleteSubject(subjectId: string) {
+    if (!this.uid || !subjectId) return;
+
+    const confirmDelete = confirm('¿Eliminar materia permanentemente?');
+    if (!confirmDelete) return;
+
+    await this.subjectsService.deleteSubjectCompletely(this.uid, subjectId);
+    await this.loadSubjects(true);
+  }
+
+  async onModalClose(e: { saved: boolean }) {
+    this.showModal = false;
+    this.selectedSubject = null;
+    this.editDataForAddModal = null;
+
+    if (e?.saved) await this.loadSubjects(true);
   }
 
   openSubject(subjectId: string) {
-    this.events.track(EVENTS.SUBJECT_OPENED, {
-      subjectId,
-      uid: this.uid,
-    });
-
     this.router.navigate(['/dashboard/subjects', subjectId, 'content']);
   }
 
   generateGuide(subjectId: string) {
-    this.router.navigate(['/ai/generate'], {
-      queryParams: { subjectId },
-    });
+    this.router.navigate(['/ai/generate'], { queryParams: { subjectId } });
+  }
+
+  openInfo(subject: any, ev?: Event) {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    this.infoSubject = subject;
+  }
+
+  closeInfo() {
+    this.infoSubject = null;
+  }
+
+  onEditFromInfo(subject: any) {
+    if (!subject?.id) return;
+
+    this.closeInfo();
+
+    this.editDataForAddModal = subject;
+    this.selectedSubject = null;
+    this.showModal = true;
+  }
+
+  async onDeleteFromInfo(subjectId: string) {
+    if (!subjectId) return;
+    this.closeInfo();
+    await this.deleteSubject(subjectId);
   }
 }

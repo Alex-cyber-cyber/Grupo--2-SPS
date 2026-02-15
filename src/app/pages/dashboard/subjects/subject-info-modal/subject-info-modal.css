@@ -1,0 +1,239 @@
+.jm-info-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.55);
+  backdrop-filter:blur(8px);
+  z-index:999;
+}
+
+.jm-info-modal{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:min(920px, calc(100vw - 56px));
+  max-height:min(88vh, 980px);
+  background:#fff;
+  border-radius:20px;
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+  z-index:1000;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.jm-info-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:18px 22px;
+  border-bottom:1px solid rgba(15,23,42,.08);
+  background:#fff;
+}
+
+.jm-info-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.jm-info-badge{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  box-shadow:0 16px 36px rgba(0,0,0,.10);
+  flex:0 0 auto;
+}
+
+.jm-info-emoji{
+  font-size:18px;
+  color:#fff;
+}
+
+.jm-info-text{
+  min-width:0;
+}
+
+.jm-info-text h2{
+  margin:0;
+  font-size:18px;
+  font-weight:950;
+  color:#0f172a;
+  max-width:560px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.jm-info-text p{
+  margin:6px 0 0;
+  font-size:12.5px;
+  color:rgba(15,23,42,.66);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.jm-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.12);
+  background:rgba(15,23,42,.03);
+  font-weight:900;
+  font-size:12px;
+  color:rgba(15,23,42,.86);
+}
+
+.jm-pill-module{
+  border-color:rgba(37,99,235,.22);
+  background:rgba(37,99,235,.07);
+  color:#1d4ed8;
+}
+
+.jm-dot{
+  opacity:.7;
+}
+
+.jm-info-head-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.jm-head-icon{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,.12);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  padding:0 !important;
+  transition:transform 120ms ease, background 120ms ease, border 120ms ease, box-shadow 120ms ease;
+}
+
+.jm-head-icon:hover{
+  background:rgba(15,23,42,.04);
+  border-color:rgba(15,23,42,.18);
+  box-shadow:0 10px 26px rgba(0,0,0,.08);
+}
+
+.jm-head-icon:active{
+  transform:scale(.98);
+}
+
+.jm-head-icon mat-icon{
+  font-size:20px;
+  width:20px;
+  height:20px;
+  line-height:20px;
+}
+
+.jm-head-edit mat-icon{
+  color:#2563eb;
+}
+
+.jm-head-delete mat-icon{
+  color:#dc2626;
+}
+
+.jm-info-x{
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.12);
+  background:#fff;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  transition:transform 120ms ease, background 120ms ease, border 120ms ease;
+}
+
+.jm-info-x:hover{
+  background:rgba(15,23,42,.04);
+  border-color:rgba(15,23,42,.18);
+}
+
+.jm-info-x:active{
+  transform:scale(.98);
+}
+
+.jm-info-body{
+  padding:18px 22px 18px;
+  overflow:auto;
+  max-height:calc(min(88vh, 980px) - 86px);
+}
+
+.jm-info-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:14px 18px;
+}
+
+.jm-info-item{
+  border:1px solid rgba(15,23,42,.08);
+  background:rgba(15,23,42,.02);
+  border-radius:16px;
+  padding:12px 12px;
+  min-width:0;
+}
+
+.jm-info-item-wide{
+  grid-column:1 / -1;
+}
+
+.jm-info-label{
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(15,23,42,.55);
+}
+
+.jm-info-value{
+  margin-top:7px;
+  font-size:14px;
+  font-weight:800;
+  color:#0f172a;
+  word-break:break-word;
+}
+
+.jm-info-pre{
+  white-space:pre-wrap;
+  line-height:1.45;
+}
+
+.jm-info-colorrow{
+  margin-top:7px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.jm-color-chip{
+  width:18px;
+  height:18px;
+  border-radius:6px;
+  outline:2px solid rgba(255,255,255,.96);
+  box-shadow:0 0 0 1px rgba(15,23,42,.18);
+  flex:0 0 auto;
+}
+
+:host ::ng-deep .jm-head-icon .mdc-icon-button__ripple,
+:host ::ng-deep .jm-head-icon .mat-mdc-button-persistent-ripple,
+:host ::ng-deep .jm-head-icon .mat-mdc-focus-indicator{
+  opacity:0 !important;
+  background:transparent !important;
+}
+
+@media (max-width:860px){
+  .jm-info-grid{
+    grid-template-columns:1fr;
+  }
+}

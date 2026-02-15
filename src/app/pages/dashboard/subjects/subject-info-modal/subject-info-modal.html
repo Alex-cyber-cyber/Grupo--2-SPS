@@ -1,0 +1,98 @@
+<div class="jm-info-backdrop" (click)="closeModal()"></div>
+
+<div class="jm-info-modal" (click)="$event.stopPropagation()">
+  <div class="jm-info-head">
+    <div class="jm-info-title">
+      <div class="jm-info-badge" [style.background]="subject?.color || '#2563EB'">
+        <span class="jm-info-emoji">{{ subject?.icon || '📚' }}</span>
+      </div>
+
+      <div class="jm-info-text">
+        <h2>{{ subject?.name || 'Materia' }}</h2>
+        <p>
+          <span class="jm-pill jm-pill-module">{{ subject?.module || '—' }}</span>
+          <span class="jm-dot" *ngIf="subject?.section">•</span>
+          <span *ngIf="subject?.section">{{ subject?.section }}</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="jm-info-head-actions">
+      <button
+        mat-icon-button
+        class="jm-head-icon jm-head-delete"
+        type="button"
+        (click)="delete($event)"
+        aria-label="Eliminar"
+        matTooltip="Eliminar"
+        matTooltipPosition="below">
+        <mat-icon>delete</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        class="jm-head-icon jm-head-edit"
+        type="button"
+        (click)="edit($event)"
+        aria-label="Editar"
+        matTooltip="Editar"
+        matTooltipPosition="below">
+        <mat-icon>edit</mat-icon>
+      </button>
+
+      <button class="jm-info-x" type="button" (click)="closeModal()" aria-label="Cerrar">✕</button>
+    </div>
+  </div>
+
+  <div class="jm-info-body">
+    <div class="jm-info-grid">
+      <div class="jm-info-item">
+        <div class="jm-info-label">Nombre</div>
+        <div class="jm-info-value">{{ subject?.name || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Módulo</div>
+        <div class="jm-info-value">{{ subject?.module || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Profesor</div>
+        <div class="jm-info-value">{{ subject?.professor || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Sección / Grupo</div>
+        <div class="jm-info-value">{{ subject?.section || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Universidad</div>
+        <div class="jm-info-value">{{ subject?.university || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Carrera</div>
+        <div class="jm-info-value">{{ subject?.career || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item jm-info-item-wide">
+        <div class="jm-info-label">Descripción</div>
+        <div class="jm-info-value jm-info-pre">{{ subject?.description || '—' }}</div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Color</div>
+        <div class="jm-info-colorrow">
+          <span class="jm-color-chip" [style.background]="subject?.color || '#2563EB'"></span>
+          <span class="jm-info-value">{{ subject?.color || '—' }}</span>
+        </div>
+      </div>
+
+      <div class="jm-info-item">
+        <div class="jm-info-label">Ícono</div>
+        <div class="jm-info-value">{{ subject?.icon || '—' }}</div>
+      </div>
+    </div>
+  </div>
+</div>

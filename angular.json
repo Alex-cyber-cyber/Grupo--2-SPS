@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "jaguar-mind": {
+    "proyecto_vanguardia": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -39,13 +39,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "700kB",
-                  "maximumError": "5MB"
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "15kB",
-                  "maximumError": "20kB"
+                  "maximumWarning": "20kb",
+                  "maximumError": "50kb"
                 }
               ],
               "outputHashing": "all"
@@ -68,10 +68,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "jaguar-mind:build:production"
+              "buildTarget": "proyecto_vanguardia:build:production"
             },
             "development": {
-              "buildTarget": "jaguar-mind:build:development"
+              "buildTarget": "proyecto_vanguardia:build:development"
             }
           },
           "defaultConfiguration": "development"
