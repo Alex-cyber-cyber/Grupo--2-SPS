@@ -1,0 +1,38 @@
+.wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+.card {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  border: 1px solid #00000022;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff;
+}
+.avatar img {
+  width: 160px;
+  height: 160px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #00000022;
+}
+.placeholder {
+  width: 160px;
+  height: 160px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #00000008;
+  border: 1px dashed #00000033;
+}
+.btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid #00000022;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.form { display: grid; gap: 10px; }
+input { padding: 10px; border-radius: 10px; border: 1px solid #00000022; }
+button { padding: 10px; border-radius: 10px; border: none; cursor: pointer; }
+.muted { opacity: .7; font-size: 13px; }

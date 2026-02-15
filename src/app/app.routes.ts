@@ -25,6 +25,11 @@ export const routes: Routes = [
     children: [
       { path: '', component: Principal },
       { path: 'subjects', component: Subjects },
+     {
+      path: 'profile',
+      loadComponent: () =>
+        import('./pages/dashboard/profile/profile').then((m) => m.Profile),
+    },
       {
         path: 'subjects/:subjectId/content',
         loadComponent: () =>

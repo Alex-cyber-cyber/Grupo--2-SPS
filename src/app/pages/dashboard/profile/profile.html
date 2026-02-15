@@ -1,0 +1,32 @@
+<div class="wrap">
+  <h2>Mi Perfil</h2>
+
+  <div class="card">
+    <div class="avatar">
+      <img *ngIf="photoPreview()" [src]="photoPreview()!" alt="avatar" />
+      <div *ngIf="!photoPreview()" class="placeholder">Sin foto</div>
+
+      <label class="btn">
+        Cambiar foto
+        <input type="file" accept="image/*" (change)="onAvatar($event)" hidden />
+      </label>
+
+      <p class="muted" *ngIf="uploading()">Subiendo...</p>
+    </div>
+
+    <form class="form" [formGroup]="form" (ngSubmit)="save()">
+      <label>Correo (no editable)</label>
+      <input formControlName="email" />
+
+      <label>Nombre</label>
+      <input formControlName="displayName" />
+
+      <label>Teléfono</label>
+      <input formControlName="phone" />
+
+      <button type="submit" [disabled]="saving() || form.invalid">
+        {{ saving() ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </form>
+  </div>
+</div>
