@@ -8,22 +8,181 @@
     <div class="page-header-actions">
       <button class="primary-btn" type="button" (click)="openCreate()">+ Agregar contenido</button>
 
-      <button
-        mat-icon-button
-        class="ai-btn"
-        type="button"
-        (click)="generateGuide()"
-        aria-label="Crear guía (IA)"
-        matTooltip="Crear guía (IA)"
-        matTooltipClass="jm-tooltip"
-        matTooltipPosition="below">
-        <mat-icon>smart_toy</mat-icon>
+      <button class="ai-btn" type="button" (click)="openStudyGuideNameModal()">
+        <mat-icon>menu_book</mat-icon>
+        <span>Generar guía</span>
+      </button>
+
+      <button class="ai-btn" type="button" (click)="openExamModal()">
+        <mat-icon>quiz</mat-icon>
+        <span>Generar examen</span>
       </button>
     </div>
   </div>
 
   <div class="top-actions">
     <button class="back-btn" type="button" (click)="goBack()">← Volver</button>
+  </div>
+
+  <div class="confirm-backdrop" *ngIf="nameModalOpen" (click)="closeStudyGuideNameModal()"></div>
+
+  <div class="confirm-modal" *ngIf="nameModalOpen" (click)="$event.stopPropagation()">
+    <div class="confirm-head">
+      <div class="confirm-title">
+        <h4>Nombre de la guía</h4>
+        <p>Escribe un nombre para guardar esta guía en Firebase.</p>
+      </div>
+      <button class="close-x" type="button" (click)="closeStudyGuideNameModal()">✕</button>
+    </div>
+
+    <div class="confirm-body">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="nameDraft" placeholder="Ej: Guía para el parcial 1" />
+      </div>
+
+      <div class="confirm-actions">
+        <button class="cancel-btn" type="button" (click)="closeStudyGuideNameModal()">
+          Cancelar
+        </button>
+        <button class="danger-btn" type="button" (click)="confirmStudyGuideNameAndGenerate()">
+          Generar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-backdrop" *ngIf="examModalOpen" (click)="closeExamModal()"></div>
+
+  <div class="confirm-modal" *ngIf="examModalOpen" (click)="$event.stopPropagation()">
+    <div class="confirm-head">
+      <div class="confirm-title">
+        <h4>Generar examen</h4>
+        <p>Configura el nombre y dificultad del examen.</p>
+      </div>
+      <button class="close-x" type="button" (click)="closeExamModal()">✕</button>
+    </div>
+
+    <div class="confirm-body">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="examNameDraft" placeholder="Ej: Examen parcial 1" />
+      </div>
+
+      <div class="field">
+        <label>Dificultad</label>
+        <div class="difficulty-picker">
+          <button
+            type="button"
+            class="diff-btn diff-basico"
+            [class.active]="examDifficultyDraft === 'basico'"
+            (click)="examDifficultyDraft = 'basico'"
+          >
+            <mat-icon class="diff-icon">eco</mat-icon>
+            <span class="diff-label">Básico</span>
+          </button>
+          <button
+            type="button"
+            class="diff-btn diff-intermedio"
+            [class.active]="examDifficultyDraft === 'intermedio'"
+            (click)="examDifficultyDraft = 'intermedio'"
+          >
+            <mat-icon class="diff-icon">bolt</mat-icon>
+            <span class="diff-label">Intermedio</span>
+          </button>
+          <button
+            type="button"
+            class="diff-btn diff-avanzado"
+            [class.active]="examDifficultyDraft === 'avanzado'"
+            (click)="examDifficultyDraft = 'avanzado'"
+          >
+            <mat-icon class="diff-icon">local_fire_department</mat-icon>
+            <span class="diff-label">Avanzado</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="cancel-btn" type="button" (click)="closeExamModal()">Cancelar</button>
+        <button class="danger-btn" type="button" (click)="confirmExamAndGenerate()">Generar</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="ai-panel"
+    *ngIf="aiError || studyGuide || exam || generatingStudyGuide || generatingExam"
+  >
+    <div class="ai-panel-head">
+      <div>
+        <h3>Resultados IA</h3>
+        <p *ngIf="subjectName">Materia: {{ subjectName }}</p>
+      </div>
+    </div>
+
+    <div class="ai-error" *ngIf="aiError">{{ aiError }}</div>
+
+    <div class="ai-loading" *ngIf="lastSavedStudyGuideId && studyGuide">
+      Guía guardada en Firebase.
+    </div>
+
+    <div class="ai-loading" *ngIf="lastSavedExamId && exam">Examen guardado en Firebase.</div>
+
+    <div class="ai-loading" *ngIf="generatingStudyGuide || generatingExam">
+      {{ generatingStudyGuide ? 'Generando guía...' : 'Generando examen...' }}
+    </div>
+
+    <div class="ai-result" *ngIf="studyGuide as r">
+      <h4>Guía de estudio</h4>
+      <p class="ai-meta">Tema: {{ r.topic }}</p>
+      <h5>{{ r.studyGuide.title }}</h5>
+      <p *ngIf="r.studyGuide.overview">{{ r.studyGuide.overview }}</p>
+
+      <div class="ai-section" *ngIf="r.studyGuide.qa.length">
+        <div class="ai-qa" *ngFor="let item of r.studyGuide.qa; let i = index">
+          <div class="ai-q">{{ i + 1 }}. {{ item.question }}</div>
+          <div class="ai-a">{{ item.answer }}</div>
+        </div>
+      </div>
+
+      <div class="ai-tags" *ngIf="r.studyGuide.keyConcepts?.length">
+        <span class="ai-tag" *ngFor="let k of r.studyGuide.keyConcepts">{{ k }}</span>
+      </div>
+
+      <div class="ai-section" *ngFor="let s of r.studyGuide.sections || []">
+        <h6>{{ s.heading }}</h6>
+        <ul>
+          <li *ngFor="let b of s.bullets">{{ b }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ai-result" *ngIf="exam as r">
+      <h4>Examen</h4>
+      <p class="ai-meta">Tema: {{ r.topic }}</p>
+      <h5>{{ r.exam.title }}</h5>
+      <p class="ai-meta">
+        Duración: {{ r.exam.durationMinutes }} min · Puntaje total: {{ r.exam.totalPoints }}
+      </p>
+
+      <div class="ai-section" *ngFor="let q of r.exam.questions">
+        <div class="ai-question-head">
+          <h6>{{ q.id }} · {{ q.type }}</h6>
+          <span class="ai-points">{{ q.points }} pts</span>
+        </div>
+        <p>{{ q.prompt }}</p>
+        <ol *ngIf="q.choices?.length">
+          <li *ngFor="let c of q.choices">{{ c }}</li>
+        </ol>
+        <div class="ai-answer" *ngIf="q.correctChoiceIndex != null || q.correctAnswer">
+          <div *ngIf="q.correctChoiceIndex != null">
+            Respuesta: opción {{ q.correctChoiceIndex + 1 }}
+          </div>
+          <div *ngIf="q.correctAnswer">Respuesta: {{ q.correctAnswer }}</div>
+          <div *ngIf="q.explanation">Explicación: {{ q.explanation }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="add-panel" *ngIf="panelOpen">
@@ -44,7 +203,8 @@
             type="text"
             [(ngModel)]="formTitle"
             [readonly]="isView"
-            placeholder="Ej: Resumen de la clase 1" />
+            placeholder="Ej: Resumen de la clase 1"
+          />
         </div>
 
         <div class="field">
@@ -53,7 +213,8 @@
             type="text"
             [(ngModel)]="formTags"
             [readonly]="isView"
-            placeholder="Ej: tarea, examen, unidad1" />
+            placeholder="Ej: tarea, examen, unidad1"
+          />
           <div class="hint">Separados por coma</div>
         </div>
       </div>
@@ -63,17 +224,14 @@
         <textarea
           [(ngModel)]="formText"
           [readonly]="isView"
-          placeholder="Escribe tu contenido aquí..."></textarea>
+          placeholder="Escribe tu contenido aquí..."
+        ></textarea>
       </div>
 
       <div class="form-actions">
         <button class="cancel-btn" type="button" (click)="closePanel()">Cerrar</button>
 
-        <button
-          class="save-btn"
-          type="button"
-          *ngIf="!isView"
-          (click)="savePanel()">
+        <button class="save-btn" type="button" *ngIf="!isView" (click)="savePanel()">
           {{ isEdit ? 'Guardar cambios' : 'Guardar texto' }}
         </button>
       </div>
@@ -94,7 +252,9 @@
       <div class="actions">
         <button class="action-btn" type="button" (click)="openView(c)">Ver</button>
         <button class="action-btn" type="button" (click)="openEdit(c)">Editar</button>
-        <button class="action-btn action-danger" type="button" (click)="askDelete(c)">Eliminar</button>
+        <button class="action-btn action-danger" type="button" (click)="askDelete(c)">
+          Eliminar
+        </button>
       </div>
     </div>
   </div>
@@ -117,7 +277,9 @@
     <div class="confirm-body">
       <div class="confirm-item">
         <div class="confirm-item-title">{{ pendingDelete?.title || 'Contenido' }}</div>
-        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">#{{ pendingDelete.tags.join(' #') }}</div>
+        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">
+          #{{ pendingDelete.tags.join(' #') }}
+        </div>
       </div>
 
       <div class="confirm-actions">

@@ -1,14 +1,23 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ContentService } from '../../../../services/subject-contents.service';
+import { StudyGuidesService } from '../../../../services/study-guides.service';
+import { ExamsService } from '../../../../services/exams.service';
+import {
+  ExamDifficulty,
+  GeneratedExamResponse,
+  GeneratedStudyGuideResponse,
+  OpenRouterService,
+} from '../../../../services/open-router.service';
 
 type PanelMode = 'create' | 'view' | 'edit';
 
@@ -21,6 +30,7 @@ type PanelMode = 'create' | 'view' | 'edit';
 })
 export class SubjectContentComponent implements OnInit, OnDestroy {
   subjectId = '';
+  subjectName = '';
   contents = signal<any[]>([]);
   private unsubscribe?: Unsubscribe;
 
@@ -35,11 +45,41 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   confirmOpen = false;
   pendingDelete: any = null;
 
+  generatingStudyGuide = false;
+  generatingExam = false;
+  aiError: string | null = null;
+  studyGuide: GeneratedStudyGuideResponse | null = null;
+  exam: GeneratedExamResponse | null = null;
+
+  nameModalOpen = false;
+  nameDraft = '';
+  lastSavedStudyGuideId: string | null = null;
+
+  examModalOpen = false;
+  examNameDraft = '';
+  examDifficultyDraft: ExamDifficulty = 'intermedio';
+  lastSavedExamId: string | null = null;
+
+  private readonly defaultModel = 'openai/gpt-4o-mini';
+
   constructor(
     private route: ActivatedRoute,
     private contentService: ContentService,
-    private router: Router
+    private router: Router,
+    private firestore: Firestore,
+    private openRouter: OpenRouterService,
+    private studyGuides: StudyGuidesService,
+    private examsService: ExamsService,
+    private cdr: ChangeDetectorRef,
   ) {}
+
+  private refreshView() {
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      // no-op
+    }
+  }
 
   get isView() {
     return this.panelMode === 'view';
@@ -61,7 +101,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     return 'Registra un texto para esta materia';
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('subjectId');
     if (!id) {
       this.router.navigate(['/dashboard/subjects']);
@@ -70,9 +110,14 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
     this.subjectId = id;
 
-    this.unsubscribe = this.contentService.observeContents(
-      this.subjectId,
-      (items) => this.contents.set(items)
+    const snap = await getDoc(doc(this.firestore, `subjects/${this.subjectId}`));
+    if (snap.exists()) {
+      const data: any = snap.data();
+      this.subjectName = String(data?.name ?? '').trim();
+    }
+
+    this.unsubscribe = this.contentService.observeContents(this.subjectId, (items) =>
+      this.contents.set(items),
     );
   }
 
@@ -84,8 +129,195 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     window.history.back();
   }
 
-  generateGuide() {
-    this.router.navigate(['/ai/generate'], { queryParams: { subjectId: this.subjectId } });
+  private getApiKeyFromStorage(): string | null {
+    const stored = (localStorage.getItem('openrouter_api_key') || '').trim();
+    if (stored) return stored;
+
+    this.aiError =
+      "Falta OpenRouter API Key en este navegador. Configúrala en DevTools con: localStorage.setItem('openrouter_api_key', 'TU_KEY')";
+    return null;
+  }
+
+  private buildStudentContentFromContents(): string {
+    const items = this.contents();
+
+    const parts = items
+      .map((c, idx) => {
+        const title = String(c?.title ?? `Texto ${idx + 1}`).trim();
+        const text = String(c?.extractedText ?? '').trim();
+        if (!text) return null;
+
+        const tags = Array.isArray(c?.tags) && c.tags.length ? `Tags: ${c.tags.join(', ')}` : '';
+
+        return `### ${title}\n${tags}\n\n${text}`.trim();
+      })
+      .filter(Boolean) as string[];
+
+    return parts.join('\n\n---\n\n');
+  }
+
+  private studyGuideToText(response: GeneratedStudyGuideResponse): string {
+    const title = (response?.studyGuide?.title || '').trim();
+    const overview = (response?.studyGuide?.overview || '').trim();
+    const topic = (response?.topic || '').trim();
+
+    const lines: string[] = [];
+    if (title) lines.push(title);
+    if (topic) lines.push(`Tema: ${topic}`);
+    if (overview) {
+      lines.push('');
+      lines.push(overview);
+    }
+
+    lines.push('');
+    (response.studyGuide.qa || []).forEach((item, idx) => {
+      const q = (item?.question || '').trim();
+      const a = (item?.answer || '').trim();
+      if (!q && !a) return;
+      lines.push(`${idx + 1}. Pregunta: ${q}`.trim());
+      lines.push(`Respuesta: ${a}`.trim());
+      lines.push('');
+    });
+
+    return lines.join('\n').trim();
+  }
+
+  openStudyGuideNameModal() {
+    this.aiError = null;
+    this.lastSavedStudyGuideId = null;
+    this.nameDraft = (this.subjectName || 'Guía de estudio').trim();
+    this.nameModalOpen = true;
+    this.refreshView();
+  }
+
+  closeStudyGuideNameModal() {
+    this.nameModalOpen = false;
+    this.refreshView();
+  }
+
+  async confirmStudyGuideNameAndGenerate() {
+    const name = (this.nameDraft || '').trim();
+    if (!name) {
+      this.aiError = 'Ponle un nombre a la guía.';
+      return;
+    }
+
+    this.nameModalOpen = false;
+    this.refreshView();
+    await this.generateStudyGuideFromContents(name);
+  }
+
+  private async generateStudyGuideFromContents(name: string) {
+    if (this.generatingStudyGuide || this.generatingExam) return;
+
+    this.aiError = null;
+    this.studyGuide = null;
+    this.lastSavedStudyGuideId = null;
+
+    const apiKey = this.getApiKeyFromStorage();
+    if (!apiKey) return;
+
+    const studentContent = this.buildStudentContentFromContents();
+    if (studentContent.length < 50) {
+      this.aiError = 'No hay contenido suficiente para generar la guía.';
+      return;
+    }
+
+    this.generatingStudyGuide = true;
+    this.refreshView();
+    try {
+      this.studyGuide = await this.openRouter.generateStudyGuide({
+        apiKey,
+        model: this.defaultModel,
+        studentContent,
+        topicHint: this.subjectName || undefined,
+        questionCount: 15,
+        durationMinutes: 60,
+      });
+
+      const text = this.studyGuideToText(this.studyGuide);
+      this.lastSavedStudyGuideId = await this.studyGuides.createStudyGuide({
+        name,
+        text,
+        subjectId: this.subjectId,
+        topic: this.studyGuide.topic,
+      });
+    } catch (e) {
+      this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+    } finally {
+      this.generatingStudyGuide = false;
+      this.refreshView();
+    }
+  }
+
+  openExamModal() {
+    this.aiError = null;
+    this.lastSavedExamId = null;
+    this.examNameDraft = (this.subjectName || 'Examen').trim();
+    this.examDifficultyDraft = 'intermedio';
+    this.examModalOpen = true;
+    this.refreshView();
+  }
+
+  closeExamModal() {
+    this.examModalOpen = false;
+    this.refreshView();
+  }
+
+  async confirmExamAndGenerate() {
+    const name = (this.examNameDraft || '').trim();
+    if (!name) {
+      this.aiError = 'Ponle un nombre al examen.';
+      return;
+    }
+
+    this.examModalOpen = false;
+    this.refreshView();
+    await this.generateExamFromContents(name, this.examDifficultyDraft);
+  }
+
+  private async generateExamFromContents(name: string, difficulty: ExamDifficulty) {
+    if (this.generatingStudyGuide || this.generatingExam) return;
+
+    this.aiError = null;
+    this.exam = null;
+    this.lastSavedExamId = null;
+
+    const apiKey = this.getApiKeyFromStorage();
+    if (!apiKey) return;
+
+    const studentContent = this.buildStudentContentFromContents();
+    if (studentContent.length < 50) {
+      this.aiError = 'No hay contenido suficiente para generar el examen.';
+      return;
+    }
+
+    this.generatingExam = true;
+    this.refreshView();
+    try {
+      this.exam = await this.openRouter.generateExam({
+        apiKey,
+        model: this.defaultModel,
+        studentContent,
+        topicHint: this.subjectName || undefined,
+        difficulty,
+        questionCount: 15,
+        durationMinutes: 60,
+      });
+
+      this.lastSavedExamId = await this.examsService.createExam({
+        name,
+        topic: this.exam.topic,
+        difficulty: this.exam.difficulty,
+        subjectId: this.subjectId,
+        exam: this.exam.exam,
+      });
+    } catch (e) {
+      this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+    } finally {
+      this.generatingExam = false;
+      this.refreshView();
+    }
   }
 
   openCreate() {
@@ -126,7 +358,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   private parseTags(raw: string): string[] {
     return (raw || '')
       .split(',')
-      .map(t => t.trim())
+      .map((t) => t.trim())
       .filter(Boolean);
   }
 
@@ -151,13 +383,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.activeContentId,
         title,
         text,
-        tags
+        tags,
       );
 
-      const updated = this.contents().map(x =>
-        x.id === this.activeContentId
-          ? { ...x, title, extractedText: text, tags }
-          : x
+      const updated = this.contents().map((x) =>
+        x.id === this.activeContentId ? { ...x, title, extractedText: text, tags } : x,
       );
       this.contents.set(updated);
 
@@ -181,7 +411,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
     await this.contentService.deleteContent(this.subjectId, this.pendingDelete);
 
-    const filtered = this.contents().filter(x => x.id !== this.pendingDelete.id);
+    const filtered = this.contents().filter((x) => x.id !== this.pendingDelete.id);
     this.contents.set(filtered);
 
     this.closeConfirm();

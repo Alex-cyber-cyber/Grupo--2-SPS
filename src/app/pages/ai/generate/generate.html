@@ -1,33 +1,165 @@
-<div class="ai-container" *ngIf="!loading && subject">
-
-  <h1>Guía de Estudio</h1>
-  <h2>{{ subject.name }}</h2>
-
-  <div class="ai-card">
-    <h3>Resumen</h3>
-    <p>{{ guide?.resumen }}</p>
+<div class="ai-container" *ngIf="!loading">
+  <div class="ai-header">
+    <h1>IA: Guía y Examen</h1>
+    <p class="ai-subtitle" *ngIf="subject">Materia: {{ subject.name }}</p>
   </div>
 
-  <div class="ai-card">
-    <h3>Objetivos</h3>
-    <ul>
-      <li *ngFor="let obj of guide?.objetivos">
-        {{ obj }}
-      </li>
-    </ul>
+  <form class="ai-card" [formGroup]="form">
+    <div class="ai-grid">
+      <div class="ai-field">
+        <label for="apiKey">OpenRouter API Key</label>
+        <input id="apiKey" type="password" formControlName="apiKey" placeholder="sk-or-..." />
+        <label class="ai-checkbox">
+          <input type="checkbox" formControlName="rememberApiKey" />
+          Recordar en este navegador
+        </label>
+      </div>
+
+      <div class="ai-field">
+        <label for="model">Modelo</label>
+        <input id="model" type="text" formControlName="model" placeholder="openai/gpt-4o-mini" />
+      </div>
+
+      <div class="ai-field">
+        <label for="topicHint">Tema (opcional)</label>
+        <input id="topicHint" type="text" formControlName="topicHint" placeholder="Ej: Álgebra" />
+      </div>
+
+      <div class="ai-field">
+        <label for="questionCount">Preguntas</label>
+        <input id="questionCount" type="number" formControlName="questionCount" min="5" max="40" />
+      </div>
+
+      <div class="ai-field">
+        <label for="durationMinutes">Duración (min)</label>
+        <input
+          id="durationMinutes"
+          type="number"
+          formControlName="durationMinutes"
+          min="15"
+          max="180"
+        />
+      </div>
+    </div>
+
+    <div class="ai-field">
+      <label for="studentContent">Contenido del estudiante (texto)</label>
+      <textarea
+        id="studentContent"
+        rows="12"
+        formControlName="studentContent"
+        placeholder="Pega aquí apuntes, resúmenes, definiciones, ejemplos..."
+      ></textarea>
+      <div
+        class="ai-hint"
+        *ngIf="form.controls.studentContent.touched && form.controls.studentContent.invalid"
+      >
+        Ingresa al menos 50 caracteres.
+      </div>
+    </div>
+
+    <div class="ai-actions">
+      <button
+        type="button"
+        (click)="generateStudyGuide()"
+        [disabled]="generatingStudyGuide || generatingExam"
+      >
+        {{ generatingStudyGuide ? 'Generando guía...' : 'Generar guía' }}
+      </button>
+      <button
+        type="button"
+        (click)="generateExam()"
+        [disabled]="generatingStudyGuide || generatingExam"
+      >
+        {{ generatingExam ? 'Generando examen...' : 'Generar examen' }}
+      </button>
+    </div>
+
+    <div class="ai-error" *ngIf="error">{{ error }}</div>
+  </form>
+
+  <div class="ai-card" *ngIf="studyGuide as r">
+    <h2>Guía de estudio</h2>
+    <p class="ai-meta">Tema: {{ r.topic }}</p>
+
+    <h3>{{ r.studyGuide.title }}</h3>
+    <p *ngIf="r.studyGuide.overview">{{ r.studyGuide.overview }}</p>
+
+    <div class="ai-section" *ngIf="r.studyGuide.qa.length">
+      <h4>Preguntas y respuestas</h4>
+      <div class="ai-qa" *ngFor="let item of r.studyGuide.qa; let i = index">
+        <div class="ai-q">{{ i + 1 }}. {{ item.question }}</div>
+        <div class="ai-a">{{ item.answer }}</div>
+      </div>
+    </div>
+
+    <div class="ai-tags" *ngIf="r.studyGuide.keyConcepts?.length">
+      <span class="ai-tag" *ngFor="let k of r.studyGuide.keyConcepts">{{ k }}</span>
+    </div>
+
+    <div class="ai-section" *ngFor="let s of r.studyGuide.sections || []">
+      <h4>{{ s.heading }}</h4>
+      <ul>
+        <li *ngFor="let b of s.bullets">{{ b }}</li>
+      </ul>
+      <div *ngIf="s.miniExercises?.length">
+        <h5>Mini ejercicios</h5>
+        <ul>
+          <li *ngFor="let ex of s.miniExercises">{{ ex }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ai-section" *ngIf="r.studyGuide.commonMistakes?.length">
+      <h4>Errores comunes</h4>
+      <ul>
+        <li *ngFor="let m of r.studyGuide.commonMistakes">{{ m }}</li>
+      </ul>
+    </div>
+
+    <div class="ai-section" *ngIf="r.studyGuide.flashcards?.length">
+      <h4>Flashcards</h4>
+      <div class="ai-flashcards">
+        <div class="ai-flashcard" *ngFor="let f of r.studyGuide.flashcards">
+          <div class="front">{{ f.front }}</div>
+          <div class="back">{{ f.back }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="ai-card">
-    <h3>Plan Semanal</h3>
-    <ul>
-      <li *ngFor="let semana of guide?.planSemanal">
-        {{ semana }}
-      </li>
-    </ul>
+  <div class="ai-card" *ngIf="exam as r">
+    <h2>Examen</h2>
+    <p class="ai-meta">Tema: {{ r.topic }}</p>
+
+    <h3>{{ r.exam.title }}</h3>
+    <p class="ai-meta">
+      Duración: {{ r.exam.durationMinutes }} min · Puntaje total: {{ r.exam.totalPoints }}
+    </p>
+
+    <div class="ai-section" *ngIf="r.exam.instructions.length">
+      <h4>Instrucciones</h4>
+      <ul>
+        <li *ngFor="let ins of r.exam.instructions">{{ ins }}</li>
+      </ul>
+    </div>
+
+    <div class="ai-question" *ngFor="let q of r.exam.questions">
+      <div class="ai-question-head">
+        <h4>{{ q.id }} · {{ q.type }}</h4>
+        <span class="ai-points">{{ q.points }} pts</span>
+      </div>
+      <p>{{ q.prompt }}</p>
+      <ol *ngIf="q.choices?.length">
+        <li *ngFor="let c of q.choices">{{ c }}</li>
+      </ol>
+      <div class="ai-answer" *ngIf="q.correctChoiceIndex != null || q.correctAnswer">
+        <div *ngIf="q.correctChoiceIndex != null">
+          Respuesta: opción {{ q.correctChoiceIndex + 1 }}
+        </div>
+        <div *ngIf="q.correctAnswer">Respuesta: {{ q.correctAnswer }}</div>
+        <div *ngIf="q.explanation">Explicación: {{ q.explanation }}</div>
+      </div>
+    </div>
   </div>
-
-</div>
-
-<div *ngIf="loading">
-  Generando guía...
 </div>

@@ -1,0 +1,93 @@
+<div class="sg-page">
+  <header class="sg-header">
+    <div class="sg-title">
+      <h1>Mis Guías de Estudio</h1>
+      <p>Aquí puedes ver todas las guías que has generado</p>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="sg-loading">
+      <span class="sg-spinner"></span>
+      <span>Cargando guías...</span>
+    </div>
+  }
+
+  @if (!loading && error) {
+    <div class="sg-error">{{ error }}</div>
+  }
+
+  @if (!loading && !error && guides.length === 0) {
+    <div class="sg-empty">
+      <mat-icon class="sg-empty-icon">inbox</mat-icon>
+      <p>No tienes guías de estudio todavía</p>
+      <span>Genera tu primera guía desde los contenidos de una materia</span>
+    </div>
+  }
+
+  @if (!loading && !error && guides.length > 0) {
+    <div class="sg-grid">
+      @for (guide of guides; track guide.id) {
+        <div class="sg-card" (click)="openGuide(guide)">
+          <div class="sg-card-top">
+            <div class="sg-card-icon"><mat-icon>menu_book</mat-icon></div>
+            <div class="sg-card-info">
+              <h3 class="sg-card-name">{{ guide.name }}</h3>
+              <span class="sg-card-date">{{ formatDate(guide.createdAt) }}</span>
+            </div>
+            <button
+              class="sg-card-delete"
+              (click)="confirmDelete(guide.id, $event)"
+              title="Eliminar"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          <p class="sg-card-preview">
+            {{ guide.text.length > 120 ? guide.text.slice(0, 120) + '...' : guide.text }}
+          </p>
+          @if (guide.topic) {
+            <span class="sg-card-topic">{{ guide.topic }}</span>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (selectedGuide) {
+  <div class="sg-modal-backdrop" (click)="closeGuide()">
+    <div class="sg-modal" (click)="$event.stopPropagation()">
+      <header class="sg-modal-header">
+        <h2>{{ selectedGuide.name }}</h2>
+        <button class="sg-modal-close" (click)="closeGuide()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      <div class="sg-modal-meta">
+        <span
+          ><mat-icon class="sg-meta-icon">calendar_today</mat-icon>
+          {{ formatDate(selectedGuide.createdAt) }}</span
+        >
+        @if (selectedGuide.topic) {
+          <span class="sg-modal-topic">{{ selectedGuide.topic }}</span>
+        }
+      </div>
+      <div class="sg-modal-body">
+        <pre class="sg-modal-text">{{ selectedGuide.text }}</pre>
+      </div>
+    </div>
+  </div>
+}
+
+@if (deleteConfirmId) {
+  <div class="sg-modal-backdrop" (click)="cancelDelete()">
+    <div class="sg-confirm-modal" (click)="$event.stopPropagation()">
+      <p>¿Eliminar esta guía de estudio?</p>
+      <div class="sg-confirm-actions">
+        <button class="sg-btn sg-btn-cancel" (click)="cancelDelete()">Cancelar</button>
+        <button class="sg-btn sg-btn-danger" (click)="doDelete()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}

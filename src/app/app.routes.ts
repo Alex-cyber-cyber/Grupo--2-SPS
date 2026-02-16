@@ -24,23 +24,27 @@ export const routes: Routes = [
       { path: 'subjects', component: Subjects },
       {
         path: 'subjects/:subjectId/content',
-        
-        loadComponent: () =>
-          import('../app/pages/dashboard/subjects/subject-content/subject-content')
-            .then(m => m.SubjectContentComponent),
 
+        loadComponent: () =>
+          import('../app/pages/dashboard/subjects/subject-content/subject-content').then(
+            (m) => m.SubjectContentComponent,
+          ),
+      },
+      {
+        path: 'guias',
+        loadComponent: () =>
+          import('./pages/dashboard/study-guides/study-guides').then((m) => m.StudyGuides),
+      },
+      {
+        path: 'examenes',
+        loadComponent: () => import('./pages/dashboard/exams/exams').then((m) => m.Exams),
       },
       { path: '**', redirectTo: '' },
     ],
   },
 
-
-    {
+  {
     path: 'ai/generate',
-    loadComponent: () =>
-      import('./pages/ai/generate/generate')
-        .then(m => m.Generate)
-  }
+    loadComponent: () => import('./pages/ai/generate/generate').then((m) => m.Generate),
+  },
 ];
-
-
