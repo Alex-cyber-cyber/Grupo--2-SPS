@@ -1,0 +1,91 @@
+<div class="wrap">
+  <h2>Contenidos de la materia</h2>
+  <p class="muted">SubjectId: <b>{{ subjectId }}</b></p>
+
+  <div class="grid">
+    <!-- Upload -->
+    <section class="card">
+      <h3>Subir archivo (PDF/DOCX/TXT)</h3>
+
+      <label>Título</label>
+      <input [(ngModel)]="uploadTitle" />
+
+      <label>Tags (coma)</label>
+      <input [(ngModel)]="uploadTags" />
+
+      <input type="file" (change)="onFile($event)" />
+
+      <button (click)="upload()" [disabled]="!selectedFile || busy()">Subir</button>
+    </section>
+
+    <!-- Paste -->
+    <section class="card">
+      <h3>Pegar texto (MVP)</h3>
+
+      <label>Título</label>
+      <input [(ngModel)]="textTitle" />
+
+      <label>Tags (coma)</label>
+      <input [(ngModel)]="textTags" />
+
+      <label>Contenido</label>
+      <textarea rows="8" [(ngModel)]="pastedText"></textarea>
+
+      <button (click)="saveText()" [disabled]="busy() || !pastedText.trim()">Guardar</button>
+    </section>
+  </div>
+
+  <hr />
+
+  <h3>Lista de contenidos</h3>
+
+  <ng-container *ngIf="contents$ | async as contents">
+    <p *ngIf="contents.length === 0" class="muted">No hay contenidos aún.</p>
+
+    <div *ngFor="let c of contents" class="item">
+      <div class="row">
+        <div>
+          <div class="title">{{ c.title }}</div>
+          <div class="muted small">
+            Tipo: {{ c.type }} <span *ngIf="c.fileName">• {{ c.fileName }}</span>
+          </div>
+
+          <div class="tags">
+            <span class="tag" *ngFor="let t of c.tags">#{{ t }}</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button (click)="open(c)">Ver</button>
+          <button (click)="startEdit(c)">Editar</button>
+          <button class="danger" (click)="remove(c)">Eliminar</button>
+        </div>
+      </div>
+
+      <!-- Ver -->
+      <div class="viewer" *ngIf="openId() === c.id">
+        <ng-container *ngIf="c.type === 'file'">
+          <a [href]="c.downloadURL" target="_blank">Abrir archivo</a>
+        </ng-container>
+
+        <ng-container *ngIf="c.type === 'text'">
+          <pre>{{ c.extractedText }}</pre>
+        </ng-container>
+      </div>
+
+      <!-- Editar -->
+      <div class="editor" *ngIf="editId() === c.id">
+        <label>Título</label>
+        <input [(ngModel)]="editTitle" />
+
+        <label>Tags (coma)</label>
+        <input [(ngModel)]="editTags" />
+
+        <div class="actions">
+          <button (click)="saveEdit(c)">Guardar</button>
+          <button (click)="cancelEdit()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
