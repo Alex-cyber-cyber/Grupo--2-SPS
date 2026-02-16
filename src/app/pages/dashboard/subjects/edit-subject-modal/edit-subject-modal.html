@@ -1,0 +1,56 @@
+<div class="modal-backdrop">
+  <div class="modal-card">
+    <h3>Editar materia</h3>
+
+    <label>
+      Nombre *
+      <input [(ngModel)]="form.name" placeholder="Nombre de la materia" />
+    </label>
+
+    <label>
+      Profesor
+      <input [(ngModel)]="form.professor" />
+    </label>
+
+    <label>
+      Sección
+      <input [(ngModel)]="form.section" />
+    </label>
+
+    <label>
+      Universidad
+      <input [(ngModel)]="form.university" />
+    </label>
+
+    <label>
+      Carrera
+      <input [(ngModel)]="form.career" />
+    </label>
+
+    <label>
+      Descripción
+      <textarea [(ngModel)]="form.description"></textarea>
+    </label>
+
+    <div class="row">
+      <label>
+        Color
+        <input type="color" [(ngModel)]="form.color" />
+      </label>
+
+      <label>
+        Ícono
+        <input [(ngModel)]="form.icon" maxlength="2" />
+      </label>
+    </div>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+    <div class="actions">
+      <button (click)="cancel()" class="ghost">Cancelar</button>
+      <button (click)="save()" [disabled]="loading" class="primary">
+        {{ loading ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>

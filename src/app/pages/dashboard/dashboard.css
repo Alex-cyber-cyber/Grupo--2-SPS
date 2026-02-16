@@ -1,50 +1,84 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f8f9fa;
+html, body{
+  margin:0;
+  padding:0;
+  height:100%;
+  width:100%;
+  font-family:'Segoe UI', sans-serif;
+  background-color:#f8f9fa;
 }
 
-/* Layout principal */
-.dashboard {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden; /* nada de scroll */
+.dashboard{
+  display:flex;
+  flex-direction:column;
+  height:100dvh;
+  width:100%;
+  overflow:hidden;
 }
 
-/* Topbar sobre todo */
-app-topbar {
-  position: fixed; /* fijo sobre sidebar y contenido */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 70px;
-  z-index: 1000;
+app-topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:70px;
+  z-index:1000;
 }
 
-/* Contenedor debajo del topbar */
-.content-wrapper {
-  display: flex;
-  flex: 1;
-  height: 100%;   /* ocupa todo el espacio restante */
-  overflow: hidden;
+.content-wrapper{
+  display:flex;
+  flex:1 1 auto;
+  width:100%;
+  padding-top:70px;
+  box-sizing:border-box;
+  min-height:0;
+  overflow:hidden;
 }
 
-/* Sidebar gordito */
-app-sidebar {
-  width: 300px;
-  height: 100%;
-  flex-shrink: 0;
+app-sidebar{
+  flex:0 0 240px;
+  width:240px;
+  height:100%;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
 }
 
-/* Contenido principal */
-.main-content {
-  flex: 1;
-  padding: 0px 0px;
-  height: 100%;
-  overflow-y: hidden;
+.main-content{
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:24px;
+  box-sizing:border-box;
+}
+
+@media (max-width: 980px){
+  app-sidebar{
+    flex:0 0 210px;
+    width:210px;
+  }
+  .main-content{
+    padding:18px;
+  }
+}
+
+@media (max-width: 760px){
+  .content-wrapper{
+    flex-direction:column;
+  }
+
+  app-sidebar{
+    width:100%;
+    flex:0 0 auto;
+    height:auto;
+    max-height:220px;
+    border-bottom:1px solid rgba(15,23,42,.08);
+  }
+
+  .main-content{
+    height:auto;
+    min-height:0;
+    overflow:auto;
+  }
 }

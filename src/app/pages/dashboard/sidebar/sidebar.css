@@ -1,11 +1,9 @@
-/* =============================
-   SIDEBAR
-============================= */
+/* Sidebar  */
 .sidebar {
-  position: fixed;           /* fijo en la pantalla */
+  position: fixed;      /* fijo en la pantalla */
   top: 70px;  
   width: 240px;
-  height: calc(100vh - 70px);
+  height: 100vh;
   background-color: #ffffff; 
   display: flex;
   flex-direction: column;
@@ -14,11 +12,10 @@
   font-family: 'Segoe UI', sans-serif;
   transition: width 0.3s;
   z-index: 500;  
+  height: calc(100vh - 70px);
 }
 
-/* -----------------------------
-   Logo
------------------------------ */
+/* Logo */
 .logo {
   display: flex;
   align-items: center;
@@ -33,13 +30,7 @@
   width: 36px;
 }
 
-.logo span {
-  transition: opacity 0.3s;
-}
-
-/* -----------------------------
-   Menú
------------------------------ */
+/* Menú */
 .menu {
   list-style: none;
   padding: 0;
@@ -57,19 +48,19 @@
   cursor: pointer;
   font-weight: 500;
   transition: all 0.3s;
-  color: #1f2937; /* Gris oscuro */
+  color: #1f2937; /* Gris oscuro para texto */
   position: relative;
 }
 
 /* Hover: cambia a tu paleta */
 .menu li:hover {
   background-color: #F05423; /* Naranja Coral */
-  color: #ffffff;            
+  color: #ffffff;             /* Texto blanco */
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(240,84,35,0.3);
 }
 
-/* Elemento activo */
+/* Elemento activo: rojo vibrante */
 .menu li.active {
   background-color: #E4002B; /* Rojo vibrante */
   color: #ffffff;
@@ -79,7 +70,7 @@
 /* Barra lateral izquierda activa */
 .menu li.active::before {
   content: '';
-  position: absolute;
+  position: 60;
   left: 0;
   top: 0;
   height: 100%;
@@ -91,13 +82,11 @@
 /* Iconos */
 .menu li .icon {
   font-size: 22px;
-  transition: margin 0.3s;
 }
 
 /* Label */
 .menu li .label {
   font-size: 16px;
-  transition: opacity 0.3s;
 }
 
 /* Footer opcional */
@@ -106,86 +95,4 @@
   font-size: 14px;
   text-align: center;
   color: rgba(0,0,0,0.4);
-}
-
-/* =============================
-   COLLAPSE
-============================= */
-.sidebar.collapsed {
-  width: 70px;
-  padding: 20px 10px;
-}
-
-/* Ocultar labels cuando colapsa */
-.sidebar.collapsed .label {
-  display: none;
-}
-
-/* Centrar iconos al colapsar */
-.sidebar.collapsed .icon {
-  margin: 0 auto;
-  font-size: 24px;
-}
-
-/* Ajustes del logo al colapsar */
-.sidebar.collapsed .logo {
-  gap: 0;
-}
-
-.sidebar.collapsed .logo img {
-  width: 30px;
-}
-
-.sidebar.collapsed .logo span {
-  display: none;
-}
-
-/* Ajustar contenido principal si el sidebar colapsa */
-.main-content {
-  margin-left: 240px; /* ancho normal */
-  transition: margin-left 0.3s;
-}
-
-.sidebar.collapsed ~ .main-content {
-  margin-left: 70px;  /* ancho colapsado */
-}
-
-/* =============================
-   BOTÓN TOGGLE
-============================= */
-.toggle-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #8B0D21;
-  margin-top: 20px;
-  transition: transform 0.2s;
-}
-
-.toggle-btn:hover {
-  transform: rotate(90deg);
-}
-
-/* =============================
-   RESPONSIVE
-============================= */
-@media screen and (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    left: -240px;
-    transition: left 0.3s;
-  }
-
-  .sidebar.open {
-    left: 0;
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .sidebar.collapsed {
-    width: 240px; /* no colapsar en móvil */
-  }
 }
