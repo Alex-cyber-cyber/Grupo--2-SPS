@@ -1,12 +1,15 @@
 import { Routes } from '@angular/router';
-import { Register } from './pages/register/register';
-import { Dashboard } from './pages/dashboard/dashboard';
-import { Principal } from './pages/dashboard/principal/principal';
-import { NotAuthenticatedGuard } from './auth/guards/not-authenticated.guard';
-import { IsAuthenticatedGuard } from './auth/guards/is-authenticated.guard';
+
 import { Home } from './pages/home/home';
 import { Login } from './pages/login/login';
+import { Register } from './pages/register/register';
+
+import { Dashboard } from './pages/dashboard/dashboard';
+import { Principal } from './pages/dashboard/principal/principal';
 import { Subjects } from './pages/dashboard/subjects/subjects';
+
+import { NotAuthenticatedGuard } from './auth/guards/not-authenticated.guard';
+import { IsAuthenticatedGuard } from './auth/guards/is-authenticated.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -22,9 +25,13 @@ export const routes: Routes = [
     children: [
       { path: '', component: Principal },
       { path: 'subjects', component: Subjects },
+     {
+      path: 'profile',
+      loadComponent: () =>
+        import('./pages/dashboard/profile/profile').then((m) => m.Profile),
+    },
       {
         path: 'subjects/:subjectId/content',
-
         loadComponent: () =>
           import('../app/pages/dashboard/subjects/subject-content/subject-content').then(
             (m) => m.SubjectContentComponent,
@@ -38,6 +45,12 @@ export const routes: Routes = [
       {
         path: 'examenes',
         loadComponent: () => import('./pages/dashboard/exams/exams').then((m) => m.Exams),
+
+        loadComponent: () =>
+          import('./pages/dashboard/subjects/subject-content/subject-content').then(
+            (m) => m.SubjectContentComponent
+          ),
+
       },
       { path: '**', redirectTo: '' },
     ],
@@ -45,6 +58,14 @@ export const routes: Routes = [
 
   {
     path: 'ai/generate',
+
     loadComponent: () => import('./pages/ai/generate/generate').then((m) => m.Generate),
   },
+
+    loadComponent: () =>
+      import('./pages/ai/generate/generate').then((m) => m.Generate),
+  },
+
+  { path: '**', redirectTo: 'home' },
+
 ];
