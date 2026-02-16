@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, Injectable, inject } from '@angular/core';
 import { Auth, User, updateProfile } from '@angular/fire/auth';
 import {
   Firestore,
@@ -14,7 +15,8 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from '@angular/fire/storage';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 export interface UserProfile {
   uid: string;
@@ -53,17 +55,14 @@ export class ProfileService {
     );
   }
 
-  // ✅ Guarda en Firestore + también actualiza Auth (para que el Topbar se actualice)
   async updateProfileData(uid: string, data: Partial<UserProfile>) {
-    const { email, uid: _uid, createdAt, ...safe } = data as any; // bloquea email/uid
+    const { email, uid: _uid, createdAt, ...safe } = data as any;
 
-    // 1) Firestore
     await updateDoc(doc(this.fs, `users/${uid}`), {
       ...safe,
       updatedAt: serverTimestamp(),
     });
 
-    // 2) Auth (displayName/photoURL)
     const current = this.auth.currentUser;
     if (current && current.uid === uid) {
       const payload: any = {};
@@ -77,7 +76,6 @@ export class ProfileService {
     }
   }
 
-  // ✅ Subida robusta (no se queda "subiendo" sin darte error)
   async uploadAvatar(uid: string, file: File): Promise<string> {
     const allowed = ['image/png', 'image/jpeg', 'image/webp'];
     if (!allowed.includes(file.type)) {
@@ -85,33 +83,109 @@ export class ProfileService {
     }
 
     const storageRef = ref(this.storage, `users/${uid}/avatar`);
-
-    console.log('📤 Subiendo avatar...', file.type, file.size);
-
     const task = uploadBytesResumable(storageRef, file, { contentType: file.type });
 
     await new Promise<void>((resolve, reject) => {
-      task.on(
-        'state_changed',
-        (snap) => {
-          const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-          console.log(`⏳ progreso: ${pct}%`);
-        },
-        (err) => {
-          console.error('❌ Error Storage:', err);
-          reject(err);
-        },
-        () => resolve()
-      );
+      task.on('state_changed', () => {}, reject, () => resolve());
     });
 
-    console.log('✅ Subida completa, obteniendo URL...');
     const url = await getDownloadURL(storageRef);
-    console.log('🔗 URL:', url);
-
-    // Guarda URL en Firestore y Auth
     await this.updateProfileData(uid, { photoURL: url });
-
     return url;
+  }
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-profile',
+  imports: [CommonModule],
+  templateUrl: './profile.html',
+  styleUrls: ['./profile.css'],
+})
+export class Profile {
+  private auth = inject(Auth);
+  private profileSvc = inject(ProfileService);
+
+  // UI state
+  msg = '';
+  msgType: 'ok' | 'err' | '' = '';
+  savingName = false;
+  uploading = false;
+
+  name = '';
+  selectedFileName = '';
+
+  user$ = of(this.auth.currentUser);
+
+  profile$: Observable<UserProfile | null> = this.user$.pipe(
+    switchMap((u) => {
+      if (!u) return of(null);
+      this.profileSvc.ensureProfileFromAuth(u).catch(() => {});
+      return this.profileSvc.profile$(u.uid);
+    })
+  );
+
+  fillFromCurrent(current: string | null) {
+    this.name = current ?? '';
+  }
+
+  initials(value: string) {
+    const parts = (value ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'U';
+    const first = parts[0]?.[0] ?? 'U';
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : '';
+    return (first + last).toUpperCase();
+  }
+
+  private toast(type: 'ok' | 'err', text: string) {
+    this.msgType = type;
+    this.msg = text;
+    // auto-clear suave
+    setTimeout(() => {
+      this.msg = '';
+      this.msgType = '';
+    }, 3500);
+  }
+
+  async saveName(uid: string) {
+    const val = (this.name ?? '').trim();
+    if (!val) {
+      this.toast('err', 'Escribe un nombre antes de guardar.');
+      return;
+    }
+
+    try {
+      this.savingName = true;
+      await this.profileSvc.updateProfileData(uid, { displayName: val });
+      this.toast('ok', '✅ Nombre actualizado');
+    } catch (e: any) {
+      this.toast('err', '❌ Error: ' + (e?.message ?? e));
+    } finally {
+      this.savingName = false;
+    }
+  }
+
+  onPickFile(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.selectedFileName = file ? file.name : '';
+  }
+
+  async onUpload(ev: Event, uid: string) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      this.uploading = true;
+      await this.profileSvc.uploadAvatar(uid, file);
+      this.toast('ok', '✅ Foto actualizada');
+      input.value = '';
+      this.selectedFileName = '';
+    } catch (e: any) {
+      this.toast('err', '❌ Error: ' + (e?.message ?? e));
+    } finally {
+      this.uploading = false;
+    }
   }
 }

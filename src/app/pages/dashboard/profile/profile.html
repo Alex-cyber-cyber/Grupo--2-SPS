@@ -1,32 +1,127 @@
-<div class="wrap">
-  <h2>Mi Perfil</h2>
+<div class="profile-page">
 
-  <div class="card">
-    <div class="avatar">
-      <img *ngIf="photoPreview()" [src]="photoPreview()!" alt="avatar" />
-      <div *ngIf="!photoPreview()" class="placeholder">Sin foto</div>
+  <!-- TÍTULO -->
+  <h1>Mi Perfil</h1>
+  <p>Administra tu información personal y tu foto de usuario.</p>
 
-      <label class="btn">
-        Cambiar foto
-        <input type="file" accept="image/*" (change)="onAvatar($event)" hidden />
-      </label>
+  <ng-container *ngIf="user$ | async as user; else notLogged">
 
-      <p class="muted" *ngIf="uploading()">Subiendo...</p>
+    <ng-container *ngIf="profile$ | async as profile; else loading">
+
+      <div class="profile-grid">
+
+        <!-- TARJETA PERFIL -->
+        <div class="profile-card">
+
+          <div class="profile-header">
+
+            <!-- FOTO -->
+            <img
+              *ngIf="profile?.photoURL; else avatarInicial"
+              [src]="profile.photoURL"
+              class="avatar"
+            />
+
+            <!-- INICIALES SI NO HAY FOTO -->
+            <ng-template #avatarInicial>
+              <div class="avatar">
+                {{ initials(profile?.displayName || profile?.email || 'U') }}
+              </div>
+            </ng-template>
+
+            <!-- INFO -->
+            <div class="profile-info">
+              <h2>{{ profile?.displayName || 'Sin nombre' }}</h2>
+              <span>{{ profile?.email }}</span>
+            </div>
+
+          </div>
+
+          <!-- CAMBIAR FOTO -->
+          <div class="form-group">
+            <label>Cambiar foto de perfil</label>
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              (change)="onUpload($event, user.uid)"
+            >
+          </div>
+
+        </div>
+
+
+        <!-- TARJETA EDITAR DATOS -->
+        <div class="profile-card">
+
+          <h3>Editar información</h3>
+
+          <div class="form-group">
+            <label>Nombre</label>
+
+            <input
+              type="text"
+              [value]="name"
+              (input)="name = ($any($event.target).value)"
+              placeholder="Escribe tu nombre"
+            >
+          </div>
+
+          <button
+            class="btn btn-primary"
+            (click)="saveName(user.uid)"
+          >
+            Guardar Cambios
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            style="margin-left:10px;"
+            (click)="fillFromCurrent(profile?.displayName || null)"
+
+          >
+            Usar actual
+          </button>
+
+          <!-- MENSAJES -->
+          <div *ngIf="msg"
+               class="message"
+               [ngClass]="{
+                 'success': msgType === 'ok',
+                 'error': msgType === 'err'
+               }">
+
+            {{ msg }}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </ng-container>
+
+  </ng-container>
+
+
+  <!-- CARGANDO -->
+  <ng-template #loading>
+
+    <div class="profile-card">
+      Cargando perfil...
     </div>
 
-    <form class="form" [formGroup]="form" (ngSubmit)="save()">
-      <label>Correo (no editable)</label>
-      <input formControlName="email" />
+  </ng-template>
 
-      <label>Nombre</label>
-      <input formControlName="displayName" />
 
-      <label>Teléfono</label>
-      <input formControlName="phone" />
+  <!-- NO LOGIN -->
+  <ng-template #notLogged>
 
-      <button type="submit" [disabled]="saving() || form.invalid">
-        {{ saving() ? 'Guardando...' : 'Guardar cambios' }}
-      </button>
-    </form>
-  </div>
+    <div class="profile-card">
+      Debes iniciar sesión para ver tu perfil.
+    </div>
+
+  </ng-template>
+
+
 </div>
