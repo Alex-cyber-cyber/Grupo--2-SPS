@@ -12,7 +12,7 @@
   z-index: 1100;
 }
 
-/* IZQUIERDA */
+
 .topbar-left {
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
   color: #8B0D21;
 }
 
-/* BOTÓN HAMBURGUESA */
+
 .menu-btn {
   font-size: 26px;
   background: none;
@@ -41,14 +41,13 @@
   color: #8B0D21;
 }
 
-/* DERECHA */
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 25px;
 }
 
-/* NOTIFICACIONES */
+
 .notification {
   position: relative;
   cursor: pointer;
@@ -71,7 +70,7 @@
   justify-content: center;
 }
 
-/* PERFIL */
+
 .profile {
   display: flex;
   align-items: center;
@@ -93,7 +92,7 @@
   color: #1f2937;
 }
 
-/* RESPONSIVE */
+
 @media (max-width: 768px) {
   .menu-btn {
     display: block;
