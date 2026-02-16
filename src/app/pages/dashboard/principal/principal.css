@@ -1,13 +1,18 @@
-.principal-page {
-  height: 100vh;              
-  padding: 50px;
-  font-family: Arial, sans-serif;
-  background-color: #f8f8f8;
-  display: flex;
-  flex-direction: column;
-  overflow-y: hidden; 
+:host {
+  display: block;
 }
 
+/* CONTENEDOR PRINCIPAL */
+.principal-page {
+  padding: 40px;
+  margin-left: 220px;
+  font-family: Arial, sans-serif;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* TÍTULOS */
 h1 {
   color: #8B0D21;
   margin-bottom: 5px;
@@ -18,7 +23,7 @@ p {
   margin-bottom: 20px;
 }
 
-/* Tarjetas*/
+/* TARJETAS */
 .cards {
   display: flex;
   gap: 20px;
@@ -57,7 +62,7 @@ p {
   color: #E4002B;
 }
 
-/* Gráficas*/
+/* GRÁFICAS */
 .charts {
   display: flex;
   flex-wrap: wrap;
@@ -65,15 +70,14 @@ p {
 }
 
 .chart-card {
-  height: 320px; 
+  height: 320px;
   background-color: #fff;
   padding: 20px;
   border-radius: 12px;
   flex: 1 1 400px;
-  min-width: 400px;
+  min-width: 300px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-
-  display: flex;       
+  display: flex;
   flex-direction: column;
 }
 
@@ -82,11 +86,21 @@ p {
   color: #8B0D21;
 }
 
-
 canvas {
+  flex: 1;
   width: 100% !important;
   height: 100% !important;
-  flex: 1;            
 }
 
- 
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .principal-page {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .cards,
+  .charts {
+    flex-direction: column;
+  }
+}
