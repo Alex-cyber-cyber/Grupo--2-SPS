@@ -1,0 +1,285 @@
+<div class="ex-page">
+  @if (view === 'list') {
+    <header class="ex-header">
+      <div class="ex-title">
+        <h1>Mis Exámenes</h1>
+        <p>Practica y evalúa tus conocimientos</p>
+      </div>
+    </header>
+
+    @if (loading) {
+      <div class="ex-loading">
+        <span class="ex-spinner"></span>
+        <span>Cargando exámenes...</span>
+      </div>
+    }
+
+    @if (!loading && error) {
+      <div class="ex-error">{{ error }}</div>
+    }
+
+    @if (!loading && !error && exams.length === 0) {
+      <div class="ex-empty">
+        <mat-icon class="ex-empty-icon">inbox</mat-icon>
+        <p>No tienes exámenes todavía</p>
+        <span>Genera tu primer examen desde los contenidos de una materia</span>
+      </div>
+    }
+
+    @if (!loading && !error && exams.length > 0) {
+      <div class="ex-grid">
+        @for (exam of exams; track exam.id) {
+          <div class="ex-card" (click)="openDetail(exam)">
+            <div class="ex-card-top">
+              <div class="ex-card-icon"><mat-icon>quiz</mat-icon></div>
+              <div class="ex-card-info">
+                <h3 class="ex-card-name">{{ exam.name }}</h3>
+                <span class="ex-card-date">{{ formatDate(exam.createdAt) }}</span>
+              </div>
+              <button
+                class="ex-card-delete"
+                (click)="confirmDelete(exam.id, $event)"
+                title="Eliminar"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            <div class="ex-card-meta">
+              <span class="ex-badge ex-badge-diff">{{ getDifficultyLabel(exam.difficulty) }}</span>
+              <span class="ex-badge">{{ exam.exam.questions.length }} preguntas</span>
+              <span class="ex-badge">{{ exam.exam.durationMinutes }} min</span>
+            </div>
+            @if (hasResults(exam)) {
+              <div class="ex-card-result">
+                <span class="ex-result-score">
+                  <mat-icon class="ex-check-icon">check_circle</mat-icon>
+                  {{ exam.results!.score }}/{{ exam.results!.totalPoints }} pts
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (view === 'detail' && selectedExam) {
+    <div class="ex-detail">
+      <button class="ex-back-btn" (click)="backToList()">← Volver</button>
+
+      <div class="ex-detail-card">
+        <div class="ex-detail-header">
+          <h2>{{ selectedExam.name }}</h2>
+          <p class="ex-detail-topic">{{ selectedExam.topic }}</p>
+        </div>
+
+        <div class="ex-detail-meta">
+          <span class="ex-badge ex-badge-diff">{{
+            getDifficultyLabel(selectedExam.difficulty)
+          }}</span>
+          <span class="ex-badge">{{ selectedExam.exam.questions.length }} preguntas</span>
+          <span class="ex-badge">{{ selectedExam.exam.durationMinutes }} min</span>
+          <span class="ex-badge">{{ selectedExam.exam.totalPoints }} pts</span>
+        </div>
+
+        @if (selectedExam.exam.instructions.length) {
+          <div class="ex-instructions">
+            <h4>Instrucciones</h4>
+            <ul>
+              @for (inst of selectedExam.exam.instructions; track inst) {
+                <li>{{ inst }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (hasResults(selectedExam)) {
+          <div class="ex-previous-result">
+            <h4>Último resultado</h4>
+            <div class="ex-result-display">
+              <span class="ex-result-big"
+                >{{ selectedExam.results!.score }}/{{ selectedExam.results!.totalPoints }}</span
+              >
+              <span class="ex-result-percent">
+                {{
+                  Math.round(
+                    (selectedExam.results!.score / selectedExam.results!.totalPoints) * 100
+                  )
+                }}%
+              </span>
+            </div>
+          </div>
+        }
+
+        <div class="ex-detail-actions">
+          <button class="ex-start-btn" (click)="startExam()">
+            {{ hasResults(selectedExam) ? 'Volver a intentar' : 'Comenzar examen' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (view === 'taking' && selectedExam) {
+    <div class="ex-taking">
+      @if (!examFinished) {
+        <div class="ex-taking-header">
+          <button class="ex-back-btn" (click)="backToList()">✕ Salir</button>
+          <div class="ex-progress">
+            <span>Pregunta {{ currentQuestionIndex + 1 }} de {{ totalQuestions }}</span>
+            <div class="ex-progress-bar">
+              <div
+                class="ex-progress-fill"
+                [style.width.%]="((currentQuestionIndex + 1) / totalQuestions) * 100"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        @if (currentQuestion) {
+          <div class="ex-question-card">
+            <div class="ex-question-header">
+              <span class="ex-question-type">
+                {{
+                  currentQuestion.type === 'multiple_choice' ? 'Opción múltiple' : 'Verdadero/Falso'
+                }}
+              </span>
+              <span class="ex-question-points">{{ currentQuestion.points }} pts</span>
+            </div>
+
+            <p class="ex-question-prompt">{{ currentQuestion.prompt }}</p>
+
+            @if (currentQuestion.type === 'multiple_choice' && currentQuestion.choices) {
+              <div class="ex-choices">
+                @for (choice of currentQuestion.choices; track choice; let i = $index) {
+                  <button
+                    class="ex-choice"
+                    [class.selected]="userAnswers[currentQuestion.id] === i"
+                    [class.correct]="showResult && currentQuestion.correctChoiceIndex === i"
+                    [class.wrong]="
+                      showResult &&
+                      userAnswers[currentQuestion.id] === i &&
+                      currentQuestion.correctChoiceIndex !== i
+                    "
+                    [disabled]="showResult"
+                    (click)="selectChoice(i)"
+                  >
+                    <span class="ex-choice-letter">{{ ['A', 'B', 'C', 'D', 'E'][i] }}</span>
+                    <span class="ex-choice-text">{{ choice }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (currentQuestion.type === 'true_false') {
+              <div class="ex-tf-options">
+                <button
+                  class="ex-tf-btn"
+                  [class.selected]="userAnswers[currentQuestion.id] === 'Verdadero'"
+                  [class.correct]="showResult && currentQuestion.correctAnswer === 'Verdadero'"
+                  [class.wrong]="
+                    showResult &&
+                    userAnswers[currentQuestion.id] === 'Verdadero' &&
+                    currentQuestion.correctAnswer !== 'Verdadero'
+                  "
+                  [disabled]="showResult"
+                  (click)="selectTrueFalse('Verdadero')"
+                >
+                  Verdadero
+                </button>
+                <button
+                  class="ex-tf-btn"
+                  [class.selected]="userAnswers[currentQuestion.id] === 'Falso'"
+                  [class.correct]="showResult && currentQuestion.correctAnswer === 'Falso'"
+                  [class.wrong]="
+                    showResult &&
+                    userAnswers[currentQuestion.id] === 'Falso' &&
+                    currentQuestion.correctAnswer !== 'Falso'
+                  "
+                  [disabled]="showResult"
+                  (click)="selectTrueFalse('Falso')"
+                >
+                  Falso
+                </button>
+              </div>
+            }
+
+            @if (showResult) {
+              <div
+                class="ex-result-feedback"
+                [class.correct]="isCorrect()"
+                [class.wrong]="!isCorrect()"
+              >
+                <mat-icon class="ex-feedback-icon">{{
+                  isCorrect() ? 'check_circle' : 'cancel'
+                }}</mat-icon>
+                <span>{{ isCorrect() ? '¡Correcto!' : 'Incorrecto' }}</span>
+              </div>
+              @if (currentQuestion.explanation) {
+                <div class="ex-explanation">
+                  <strong>Explicación:</strong> {{ currentQuestion.explanation }}
+                </div>
+              }
+            }
+
+            <div class="ex-question-actions">
+              @if (!showResult && hasAnswered) {
+                <button class="ex-check-btn" (click)="checkAnswer()">Verificar</button>
+              }
+              @if (showResult) {
+                <button class="ex-next-btn" (click)="nextQuestion()">
+                  {{ currentQuestionIndex < totalQuestions - 1 ? 'Siguiente' : 'Ver resultados' }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      @if (examFinished) {
+        <div class="ex-finished">
+          <div class="ex-finished-card">
+            <h2>¡Examen completado!</h2>
+            <div class="ex-final-score">
+              <span class="ex-score-big">{{ score }}/{{ totalPoints }}</span>
+              <span
+                class="ex-score-percent"
+                [class.good]="getScorePercent() >= 70"
+                [class.bad]="getScorePercent() < 70"
+              >
+                {{ getScorePercent() }}%
+              </span>
+            </div>
+            <p class="ex-score-message">
+              @if (getScorePercent() >= 90) {
+                ¡Excelente trabajo! Dominas el tema.
+              } @else if (getScorePercent() >= 70) {
+                ¡Buen trabajo! Sigue practicando.
+              } @else if (getScorePercent() >= 50) {
+                Puedes mejorar. Revisa el material.
+              } @else {
+                Necesitas repasar el contenido.
+              }
+            </p>
+            <div class="ex-finished-actions">
+              <button class="ex-retry-btn" (click)="startExam()">Volver a intentar</button>
+              <button class="ex-back-btn" (click)="backToList()">Volver a mis exámenes</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (deleteConfirmId) {
+  <div class="ex-modal-backdrop" (click)="cancelDelete()">
+    <div class="ex-confirm-modal" (click)="$event.stopPropagation()">
+      <p>¿Eliminar este examen?</p>
+      <div class="ex-confirm-actions">
+        <button class="ex-btn ex-btn-cancel" (click)="cancelDelete()">Cancelar</button>
+        <button class="ex-btn ex-btn-danger" (click)="doDelete()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}
