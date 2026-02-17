@@ -1,0 +1,34 @@
+<div class="resources-page">
+  <h2>Biblioteca de Recursos</h2>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <select [(ngModel)]="filtroMateria">
+      <option value="">Todas las materias</option>
+      <option value="Matemáticas">Matemáticas</option>
+      <option value="Historia">Historia</option>
+      <option value="Física">Física</option>
+    </select>
+
+    <select [(ngModel)]="filtroTipo">
+      <option value="">Todos los tipos</option>
+      <option value="guia">Guía</option>
+      <option value="examen">Examen</option>
+    </select>
+  </div>
+
+  <!-- Lista de recursos -->
+  <div class="resources-list">
+    <div *ngFor="let r of recursosFiltrados" class="resource-card"  [routerLink]="['/dashboard/resources', r.id]">
+      <span class="icon">{{ r.tipo === 'guia' ? '📖' : '📝' }}</span>
+      <div class="info">
+        <h3>{{ r.titulo }}</h3>
+        <p>{{ r.materia }} | {{ r.fecha }}</p>
+      </div>
+    </div>
+
+    <p *ngIf="recursosFiltrados.length === 0" class="no-result">
+      No se encontraron recursos.
+    </p>
+  </div>
+</div>

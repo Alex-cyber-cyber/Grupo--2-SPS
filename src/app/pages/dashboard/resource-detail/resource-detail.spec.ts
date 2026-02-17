@@ -1,17 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Principal } from './principal';
 
-describe('Principal', () => {
-  let component: Principal;
-  let fixture: ComponentFixture<Principal>;
+import { ResourceDetail } from './resource-detail';
+
+describe('ResourceDetail', () => {
+  let component: ResourceDetail;
+  let fixture: ComponentFixture<ResourceDetail>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Principal]
+      imports: [ResourceDetail]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Principal);
+    fixture = TestBed.createComponent(ResourceDetail);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

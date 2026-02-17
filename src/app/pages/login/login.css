@@ -45,6 +45,7 @@ body {
   background: #ffffff;
   margin: 0;
   border: none;
+  overflow-y: auto;
 }
 
 .login-page::before {
