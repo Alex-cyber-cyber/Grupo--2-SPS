@@ -1,22 +1,28 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 3990;
+}
+
 .jm-backdrop{
-  position:fixed;
-  inset:0;
+  position: fixed;
+  inset: 0;
   background: rgba(15,23,42,.55);
   backdrop-filter: blur(8px);
-  z-index: 999;
+  z-index: 4000; /* MÁS ALTO que sidebar */
 }
 
 .jm-modal{
-  position:fixed;
-  top:50%;
-  left:50%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   width: min(980px, calc(100vw - 56px));
   max-height: min(88vh, 920px);
   background:#fff;
   border-radius: 20px;
   box-shadow: 0 30px 90px rgba(0,0,0,.28);
-  z-index: 1000;
+  z-index: 4010; /* MAYOR que backdrop */
   overflow:hidden;
 }
 
