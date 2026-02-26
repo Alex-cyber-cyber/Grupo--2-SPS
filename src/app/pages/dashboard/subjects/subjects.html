@@ -8,18 +8,6 @@
     <div class="jm-header-actions">
       <button
         mat-icon-button
-        class="jm-mat-icon-btn"
-        type="button"
-        (click)="toggleRefresh($event)"
-        [disabled]="loading"
-        aria-label="Actualizar"
-        [matTooltip]="loading ? 'Actualizando...' : 'Actualizar'"
-        matTooltipPosition="below">
-        <mat-icon class="jm-refresh-icon" [class.is-spinning]="loading">refresh</mat-icon>
-      </button>
-
-      <button
-        mat-icon-button
         class="jm-mat-add-btn"
         type="button"
         (click)="openAddModal()"
@@ -49,7 +37,7 @@
       <div class="jm-card-top">
         <div class="jm-card-left">
           <div class="jm-card-icon" [style.background]="subject.color || '#2563EB'">
-            {{ subject.icon || '📚' }}
+            {{ displayIcon(subject.icon) }}
           </div>
 
           <div class="jm-card-text">

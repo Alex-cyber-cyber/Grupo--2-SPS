@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { SubjectsService, } from '../../services/subjects.service';
+import { SubjectsService } from '../../services/subjects.service';
 
 @Component({
   selector: 'app-add-subject-modal',
@@ -12,71 +12,80 @@ import { SubjectsService, } from '../../services/subjects.service';
   styleUrls: ['./add-subject-modal.css'],
 })
 export class AddSubjectModal implements OnInit {
-
   @Input({ required: true }) uid!: string;
-  @Input() editData: any = null; // 🔥 NUEVO
-  @Output() close = new EventEmitter<{ saved: boolean }>();
+  @Input() editData: any = null;
+  @Output() close = new EventEmitter<{ saved: boolean; subject?: any }>();
 
   saving = false;
   errorMsg = '';
-  isEditMode = false; // 🔥 NUEVO
+  isEditMode = false;
 
   readonly colors = ['#2563EB', '#16A34A', '#DC2626', '#7C3AED', '#F59E0B', '#0EA5E9', '#111827'];
-  readonly icons = ['📚', '🧠', '💻', '🧪', '📊', '🧮', '📝', '🔬', '⚡', '🎨'];
+  readonly icons = [
+    '\uD83D\uDCDA',
+    '\uD83E\uDDE0',
+    '\uD83D\uDCBB',
+    '\uD83E\uDDEA',
+    '\uD83D\uDCCA',
+    '\uD83E\uDDEE',
+    '\uD83D\uDCDD',
+    '\uD83D\uDD2C',
+    '\u26A1',
+    '\uD83C\uDFA8',
+  ];
 
   careerOptions: string[] = [
-    'Ingeniería en: Electrónica',
-    'Ingeniería en: Gestión de Ambiente y Desarrollo',
-    'Ingeniería en: Gestión Logística',
-    'Ingeniería en: Informática',
-    'Licenciatura en: Administración de Empresas',
-    'Licenciatura en: Contaduría Pública y Finanzas',
+    'Ingenieria en: Electronica',
+    'Ingenieria en: Gestion de Ambiente y Desarrollo',
+    'Ingenieria en: Gestion Logistica',
+    'Ingenieria en: Informatica',
+    'Licenciatura en: Administracion de Empresas',
+    'Licenciatura en: Contaduria Publica y Finanzas',
     'Licenciatura en: Derecho',
-    'Licenciatura en: Diseño Gráfico',
-    'Licenciatura en: Economía',
-    'Licenciatura en: Enfermería',
+    'Licenciatura en: Diseno Grafico',
+    'Licenciatura en: Economia',
+    'Licenciatura en: Enfermeria',
     'Licenciatura en: Mercadotecnia',
     'Licenciatura en: Periodismo',
-    'Licenciatura en: Psicología',
+    'Licenciatura en: Psicologia',
     'Licenciatura en: Recursos Humanos',
-    'Licenciatura en: Terapia Física y Ocupacional',
-    'Técnico Universitario: Bilingüe en Call Center',
-    'Técnico Universitario en: Administración',
-    'Técnico Universitario en: Bilingüe en Turismo',
-    'Técnico Universitario en: Comercialización y Promoción Retail',
-    'Técnico Universitario en: Desarrollo de Aplicaciones Web',
-    'Técnico Universitario en: Desarrollo y Cuidado Infantil',
-    'Técnico Universitario en: Diseño de Interiores',
+    'Licenciatura en: Terapia Fisica y Ocupacional',
+    'Tecnico Universitario: Bilingue en Call Center',
+    'Tecnico Universitario en: Administracion',
+    'Tecnico Universitario en: Bilingue en Turismo',
+    'Tecnico Universitario en: Comercializacion y Promocion Retail',
+    'Tecnico Universitario en: Desarrollo de Aplicaciones Web',
+    'Tecnico Universitario en: Desarrollo y Cuidado Infantil',
+    'Tecnico Universitario en: Diseno de Interiores',
     'Otra',
   ];
 
-
   timeOptions: { value: string; label: string }[] = [];
-
   form: FormGroup;
 
-  constructor(private subjectsService: SubjectsService, private fb: FormBuilder) {
+  constructor(
+    private subjectsService: SubjectsService,
+    private fb: FormBuilder,
+  ) {
     this.timeOptions = this.buildTimeOptions();
     this.form = this.createForm();
   }
 
-  ngOnInit() {
-    if (this.editData) {
-      this.isEditMode = true;
+  ngOnInit(): void {
+    if (!this.editData) return;
 
-      this.form.patchValue({
-        name: this.editData.name,
-        module: this.editData.module,
-        professor: this.editData.professor,
-        section: this.editData.section,
-        university: this.editData.university,
-        career: this.editData.career,
-        description: this.editData.description,
-        color: this.editData.color,
-        icon: this.editData.icon,
-      });
-
-    }
+    this.isEditMode = true;
+    this.form.patchValue({
+      name: this.editData.name,
+      module: this.editData.module,
+      professor: this.editData.professor,
+      section: this.editData.section,
+      university: this.editData.university,
+      career: this.editData.career,
+      description: this.editData.description,
+      color: this.editData.color,
+      icon: this.editData.icon,
+    });
   }
 
   get scheduleArray(): FormArray {
@@ -94,101 +103,99 @@ export class AddSubjectModal implements OnInit {
       careerOther: [''],
       description: [''],
       color: ['#2563EB', [Validators.required]],
-      icon: ['📚', [Validators.required]],
+      icon: ['\uD83D\uDCDA', [Validators.required]],
       schedule: this.fb.array([]),
     });
   }
 
-  closeModal() {
+  closeModal(): void {
     if (this.saving) return;
     this.close.emit({ saved: false });
   }
-pickColor(c: string) {
-  this.form.patchValue({ color: c });
-}
 
-pickIcon(i: string) {
-  this.form.patchValue({ icon: i });
-}
-
-addScheduleRow() {
-  const row = this.fb.group({
-    days: this.fb.group({
-      mon: [false],
-      tue: [false],
-      wed: [false],
-      thu: [false],
-      fri: [false],
-      sat: [false],
-      sun: [false],
-    }),
-    start: [''],
-    end: [''],
-    room: [''],
-  });
-
-  this.scheduleArray.push(row);
-}
-
-removeScheduleRow(index: number) {
-  this.scheduleArray.removeAt(index);
-}
-
-async saveSubject() {
-  this.errorMsg = '';
-
-  if (this.form.invalid) {
-    this.form.markAllAsTouched();
-    return;
+  pickColor(c: string): void {
+    this.form.patchValue({ color: c });
   }
 
-  try {
-    this.saving = true;
+  pickIcon(i: string): void {
+    this.form.patchValue({ icon: i });
+  }
 
-    const v: any = this.form.value;
-    const careerFinal =
-      v.career === 'Otra'
-        ? (v.careerOther || '').trim()
-        : (v.career || '').trim();
+  addScheduleRow(): void {
+    const row = this.fb.group({
+      days: this.fb.group({
+        mon: [false],
+        tue: [false],
+        wed: [false],
+        thu: [false],
+        fri: [false],
+        sat: [false],
+        sun: [false],
+      }),
+      start: [''],
+      end: [''],
+      room: [''],
+    });
 
-    const cleanedData: any = {
-      name: (v.name || '').trim(),
-      module: v.module,
-      professor: (v.professor || '').trim(),
-      section: (v.section || '').trim(),
-      university: (v.university || '').trim(),
-      career: careerFinal,
-      description: (v.description || '').trim(),
-      color: v.color,
-      icon: v.icon,
-    };
+    this.scheduleArray.push(row);
+  }
 
-    if (this.isEditMode) {
-      // ✏️ EDITAR
-      await this.subjectsService.updateSubject(
-        this.editData.id,
-        cleanedData
-      );
-    } else {
-      // ➕ CREAR
-      await this.subjectsService.createSubjectForUser(
-        this.uid,
-        cleanedData
-      );
+  removeScheduleRow(index: number): void {
+    this.scheduleArray.removeAt(index);
+  }
+
+  async saveSubject(): Promise<void> {
+    this.errorMsg = '';
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
     }
 
-    this.close.emit({ saved: true });
+    try {
+      this.saving = true;
 
-  } catch (err: any) {
-    this.errorMsg =
-      err?.message ?? 'Ocurrió un error guardando la materia.';
-  } finally {
-    this.saving = false;
+      const v: any = this.form.value;
+      const careerFinal = v.career === 'Otra' ? (v.careerOther || '').trim() : (v.career || '').trim();
+
+      const cleanedData: any = {
+        name: (v.name || '').trim(),
+        module: v.module,
+        professor: (v.professor || '').trim(),
+        section: (v.section || '').trim(),
+        university: (v.university || '').trim(),
+        career: careerFinal,
+        description: (v.description || '').trim(),
+        color: v.color,
+        icon: v.icon,
+      };
+
+      if (this.isEditMode) {
+        await this.subjectsService.updateSubject(this.editData.id, cleanedData);
+        this.close.emit({
+          saved: true,
+          subject: {
+            ...(this.editData || {}),
+            ...cleanedData,
+            id: this.editData.id,
+          },
+        });
+      } else {
+        const newId = await this.subjectsService.createSubjectForUser(this.uid, cleanedData);
+        this.close.emit({
+          saved: true,
+          subject: {
+            ...cleanedData,
+            id: newId,
+          },
+        });
+      }
+    } catch (err: any) {
+      this.errorMsg = err?.message ?? 'Ocurrio un error guardando la materia.';
+    } finally {
+      this.saving = false;
+    }
   }
-}
-
-
-
 
   private buildTimeOptions() {
     const options: { value: string; label: string }[] = [];
