@@ -18,6 +18,7 @@ html, body {
   flex: 1;
   min-height: 0;
   position: relative; 
+  gap: 24px;
 }
 
 
@@ -51,6 +52,7 @@ app-sidebar.open {
   margin-left: 0; 
   transition: margin-left 0.3s, width 0.3s;
   width: 100%;
+  padding: 24px 32px; 
 }
 
 
@@ -78,7 +80,6 @@ app-sidebar.open {
   }
 }
 
-/* Desktop */
 @media (min-width: 1024px) {
   app-sidebar {
     left: 0 !important;
@@ -86,8 +87,10 @@ app-sidebar.open {
     width: 240px;
     height: calc(100% - 70px);
   }
+
   .main-content {
     margin-left: 240px; 
-    width: calc(100% - 240px); 
+    width: calc(100% - 240px);
+    padding-left: 48px;
   }
 }
