@@ -129,15 +129,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     window.history.back();
   }
 
-  private getApiKeyFromStorage(): string | null {
-    const stored = (localStorage.getItem('openrouter_api_key') || '').trim();
-    if (stored) return stored;
-
-    this.aiError =
-      "Falta OpenRouter API Key en este navegador. Configúrala en DevTools con: localStorage.setItem('openrouter_api_key', 'TU_KEY')";
-    return null;
-  }
-
   private buildStudentContentFromContents(): string {
     const items = this.contents();
 
@@ -214,8 +205,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.studyGuide = null;
     this.lastSavedStudyGuideId = null;
 
-    const apiKey = this.getApiKeyFromStorage();
-    if (!apiKey) return;
+    const apiKey = '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';
 
     const studentContent = this.buildStudentContentFromContents();
     if (studentContent.length < 50) {
@@ -283,8 +273,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.exam = null;
     this.lastSavedExamId = null;
 
-    const apiKey = this.getApiKeyFromStorage();
-    if (!apiKey) return;
+    const apiKey = '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';
 
     const studentContent = this.buildStudentContentFromContents();
     if (studentContent.length < 50) {
