@@ -1,186 +1,234 @@
-/* ========== BASE (como tu ejemplo "principal") ========== */
-:host {
-  display: block;
-  overflow-x: hidden;
+:host{ display:block; overflow-x:hidden; }
+*{ box-sizing:border-box; }
+
+/* ===== COLORES ===== */
+:root{
+  --bg:#f4f6f9;
+  --card:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+
+  --primary:#FF1A3C;        /* 🔴 ROJO ENCENDIDO */
+  --primary-hover:#E0002E;  /* Hover más intenso */
+
+  --border: rgba(17,24,39,.08);
+  --shadow: 0 18px 45px rgba(17,24,39,.10);
+
+  --radius:18px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-/* ========== PAGE ========== */
-.profile-page {
-  width: 100%;
-  min-height: 100vh;
-  padding: 0 40px 40px 40px;   /* igual a principal-page */
+/* ===== PAGE ===== */
+.profile-page{
+  min-height:100vh;
+  padding:50px 60px;
+  background: linear-gradient(180deg,#f8f9fb 0%, #eef1f5 100%);
   font-family: Arial, sans-serif;
-  background-color: #f8f8f8;
-  overflow-x: hidden;          /* evita scroll horizontal */
 }
 
-/* Titulares / textos si los usas en perfil */
-.profile-page h1 {
-  color: #8B0D21;
-  margin-bottom: 5px;
+.profile-container{
+  max-width:1100px;
+  margin:0 auto;
 }
 
-.profile-page p {
-  color: #555;
-  margin-bottom: 20px;
+/* ===== HEADER ===== */
+.page-header{
+  margin-bottom:35px;
 }
 
-/* ========== GRID -> como "cards" (flex wrap) ========== */
-/* Si quieres que se vea como .cards, usa flex en lugar de grid */
-.profile-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 30px;
+.page-header h1{
+  font-size:36px;
+  font-weight:900;
+  margin-bottom:6px;
 }
 
-/* ========== CARD (como .card) ========== */
-.profile-card {
-  background-color: #fff;
-  padding: 15px 20px;                /* igual al ejemplo */
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  flex: 1 1 250px;                   /* comportamiento tipo card */
-  min-width: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;                         /* aire interno consistente */
+.subtitle{
+  color:var(--muted);
+  font-size:15px;
 }
 
-.profile-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+/* ===== GRID ===== */
+.profile-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+  gap:35px;              /* 🔥 más espacio entre cards */
 }
 
-/* ========== HEADER (como card-header) ========== */
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
+.profile-card{
+  background: linear-gradient(180deg, #ffffff 0%, #ffe9ee 100%);
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.12);
+  border: 2px solid rgba(255,0,60,.15);
+  transition: all .25s ease;
 }
 
-/* Si tienes un bloque de info, ajusta h2 como en el estilo de cards */
-.profile-info h2 {
-  margin: 0;
-  color: #E4002B;
-  font-size: 1rem;
+.profile-card:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 30px 60px rgba(0,0,0,.18);
+  border-color: rgba(255,0,60,.35);
 }
 
-.profile-info p {
-  margin: 0;
-  color: #555;
+/* Barra roja superior fuerte */
+.profile-card::before{
+  content:"";
+  display:block;
+  height:6px;
+  margin:-30px -30px 25px -30px;
+  background:#FF003C;
+  border-radius:18px 18px 0 0;
 }
 
-/* ========== AVATAR (solo ajustado al estilo) ========== */
-.avatar {
-  width: 90px;
-  height: 90px;
+/* ===== PROFILE HEADER ===== */
+.profile-header{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  margin-bottom:20px;
+}
+.profile-actions{
+  margin-top: 30px;     /* Más separación del input */
+  display:flex;
+  flex-direction:column;
+  gap: 22px;            /* 🔥 Más espacio entre botones */
+}
+
+.avatar{
+  width:95px;
+  height:95px;
+  border-radius:20px;
+  background:#f3f4f6;
+  border:3px solid var(--primary);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:900;
+  color:#111;
+}
+
+.profile-info h2{
+  margin:0;
+  font-size:18px;
+  font-weight:900;
+}
+
+.profile-info .email{
+  font-size:14px;
+  color:var(--muted);
+}
+
+/* ===== FORM ===== */
+.form-group{
+  margin-top:18px;
+}
+
+label{
+  font-weight:700;
+  font-size:13px;
+  margin-bottom:8px;
+  display:block;
+}
+
+input[type="text"]{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.10);
+  font-size:15px;
+  transition:.2s;
+}
+
+input[type="text"]:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px rgba(255,26,60,.15);
+}
+
+/* ===== FILE BUTTON ===== */
+.upload-row{
+  margin-top:12px;
+}
+
+.upload-btn{
+  background:#fff;
+  border:2px dashed var(--primary);
+  color:var(--primary);
+  padding:12px 16px;
+  border-radius:14px;
+  font-weight:900;
+  cursor:pointer;
+  display:inline-block;
+  transition:.2s;
+}
+
+.upload-btn:hover{
+  background:var(--primary);
+  color:#fff;
+}
+
+.upload-btn input{
+  display:none;
+}
+
+.upload-hint{
+  display:block;
+  margin-top:8px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.btn{
+  padding: 15px 16px;   /* Un poco menos alto */
   border-radius: 16px;
-  object-fit: cover;
-  border: 3px solid #E4002B;
-  background-color: #f2f2f2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  font-weight: bold;
-  color: #8B0D21;
-  flex: 0 0 auto;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: .4px;
+
+  background:#FF003C;
+  color:#fff;
+
+  box-shadow: 0 15px 35px rgba(255,0,60,.35);
+
+  transition: .2s ease;
+}
+.btn:hover{
+  background:#D90032;
+  transform: translateY(-3px);
+  box-shadow:
+    0 25px 45px rgba(255,0,60,.55);
 }
 
-/* ========== BOTONES (misma vibra) ========== */
-.btn {
-  padding: 10px 18px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s ease, transform 0.2s ease;
-  white-space: nowrap;
+.btn:active{
+  transform: translateY(0);
+  box-shadow:
+    0 10px 20px rgba(255,0,60,.35);
+}
+/* ===== MENSAJES ===== */
+.message{
+  margin-top:20px;
+  padding:14px;
+  border-radius:14px;
+  font-weight:600;
+  font-size:14px;
 }
 
-.btn-primary {
-  background-color: #E4002B;
-  color: white;
+.message.success{
+  background:#e6f8ec;
+  color:#166534;
 }
 
-.btn-primary:hover {
-  background-color: #8B0D21;
-  transform: translateY(-2px);
+.message.error{
+  background:#fde8e8;
+  color:#991b1b;
 }
 
-.btn-secondary {
-  background-color: #eee;
-  color: #333;
-}
-
-.btn-secondary:hover {
-  background-color: #ddd;
-}
-
-/* Si tus botones van en fila, puedes usar un contenedor */
-.profile-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* ========== RESPONSIVE (copiando tu ejemplo) ========== */
-@media (max-width: 980px) {
-  .profile-page {
-    padding: 30px;
-  }
-}
-
-@media (max-width: 768px) {
-  .profile-grid {
-    gap: 12px;
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .profile-page{
+    padding:35px 25px;
   }
 
-  .profile-card {
-    padding: 10px 14px;
-  }
-
-  .profile-header {
-    margin-bottom: 6px;
-  }
-
-  .profile-info h2 {
-    font-size: 15px;
-    margin-bottom: 4px;
-  }
-
-  .profile-page p,
-  .profile-info p {
-    font-size: 13px;
-    margin-bottom: 0;
-  }
-
-  /* si quieres, los botones full-width en móvil */
-  .profile-actions {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-  }
-}
-
-/* Opcional: pantallas muy pequeñas */
-@media (max-width: 480px) {
-  .profile-page {
-    padding: 20px 12px;
-  }
-
-  .avatar {
-    width: 72px;
-    height: 72px;
-    font-size: 20px;
+  .profile-grid{
+    grid-template-columns:1fr;
   }
 }
