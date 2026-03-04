@@ -111,11 +111,13 @@ export class Subjects implements OnInit {
     this.selectedSubject = null;
     this.editDataForAddModal = null;
     this.showModal = true;
+    this.cdr.detectChanges();
   }
 
   editSubject(subject: any): void {
     this.selectedSubject = subject;
     this.showModal = true;
+    this.cdr.detectChanges();
   }
 
   async deleteSubject(subjectId: string): Promise<void> {
@@ -127,6 +129,7 @@ export class Subjects implements OnInit {
     const previous = [...this.subjects];
     this.subjects = this.subjects.filter((s) => s.id !== subjectId);
     Subjects.subjectsCache.set(this.uid, [...this.subjects]);
+    this.cdr.detectChanges();
 
     try {
       await this.subjectsService.deleteSubjectCompletely(this.uid, subjectId);
@@ -135,6 +138,7 @@ export class Subjects implements OnInit {
       console.error(error);
       this.subjects = previous;
       Subjects.subjectsCache.set(this.uid, [...this.subjects]);
+      this.cdr.detectChanges();
       alert('No se pudo eliminar la materia. Intentalo de nuevo.');
     }
   }
@@ -143,6 +147,7 @@ export class Subjects implements OnInit {
     this.showModal = false;
     this.selectedSubject = null;
     this.editDataForAddModal = null;
+    this.cdr.detectChanges();
 
     if (!e?.saved) return;
 
@@ -160,17 +165,13 @@ export class Subjects implements OnInit {
     if (idx >= 0) {
       this.subjects[idx] = { ...this.subjects[idx], ...normalized };
       this.subjects = [...this.subjects];
-      if (this.uid) {
-        Subjects.subjectsCache.set(this.uid, [...this.subjects]);
-      }
+      if (this.uid) Subjects.subjectsCache.set(this.uid, [...this.subjects]);
       this.cdr.detectChanges();
       return;
     }
 
     this.subjects = [normalized, ...this.subjects];
-    if (this.uid) {
-      Subjects.subjectsCache.set(this.uid, [...this.subjects]);
-    }
+    if (this.uid) Subjects.subjectsCache.set(this.uid, [...this.subjects]);
     this.cdr.detectChanges();
   }
 
@@ -179,16 +180,12 @@ export class Subjects implements OnInit {
   }
 
   private normalizeIcon(icon: string | null | undefined): string {
-    if (!icon || icon === '?' || icon === '??') {
-      return '\uD83D\uDCDA';
-    }
+    if (!icon || icon === '?' || icon === '??') return '\uD83D\uDCDA';
     return icon;
   }
 
   private schedulePostSaveRefresh(): void {
-    if (this.postSaveRefreshTimer) {
-      clearTimeout(this.postSaveRefreshTimer);
-    }
+    if (this.postSaveRefreshTimer) clearTimeout(this.postSaveRefreshTimer);
 
     this.postSaveRefreshTimer = setTimeout(() => {
       void this.loadSubjects(true);
@@ -197,7 +194,9 @@ export class Subjects implements OnInit {
   }
 
   openSubject(subjectId: string): void {
-    this.router.navigate(['/dashboard/subjects', subjectId, 'content']);
+    this.router.navigate(['/dashboard/subjects', subjectId, 'content'], {
+      queryParams: { _r: Date.now() },
+    });
   }
 
   generateGuide(subjectId: string): void {
