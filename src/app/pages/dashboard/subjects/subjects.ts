@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 
@@ -51,6 +51,8 @@ export class Subjects implements OnInit {
     private subjectsService: SubjectsService,
     private router: Router,
     private auth: Auth,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -60,28 +62,36 @@ export class Subjects implements OnInit {
       const cached = Subjects.subjectsCache.get(this.uid);
       if (cached) {
         this.subjects = [...cached];
+        this.cdr.detectChanges();
       }
       void this.loadSubjects();
     }
 
-    onAuthStateChanged(this.auth, async (user) => {
-      this.uid = user?.uid ?? null;
-      if (!this.uid) return;
+    onAuthStateChanged(this.auth, (user) => {
+      this.zone.run(async () => {
+        this.uid = user?.uid ?? null;
+        if (!this.uid) return;
 
-      const cached = Subjects.subjectsCache.get(this.uid);
-      if (cached) {
-        this.subjects = [...cached];
-      }
+        const cached = Subjects.subjectsCache.get(this.uid);
+        if (cached) {
+          this.subjects = [...cached];
+          this.cdr.detectChanges();
+        }
 
-      await this.loadSubjects();
+        await this.loadSubjects();
+        this.cdr.detectChanges();
+      });
     });
   }
 
   async loadSubjects(forceServer = false): Promise<void> {
     if (!this.uid) return;
     const data = await this.subjectsService.getSubjectsForUser(this.uid, forceServer);
-    this.subjects = data.map((s) => ({ ...s, icon: this.normalizeIcon(s.icon) }));
-    Subjects.subjectsCache.set(this.uid, [...this.subjects]);
+    this.zone.run(() => {
+      this.subjects = data.map((s) => ({ ...s, icon: this.normalizeIcon(s.icon) }));
+      Subjects.subjectsCache.set(this.uid!, [...this.subjects]);
+      this.cdr.detectChanges();
+    });
   }
 
   async toggleRefresh(ev?: Event): Promise<void> {
@@ -153,6 +163,7 @@ export class Subjects implements OnInit {
       if (this.uid) {
         Subjects.subjectsCache.set(this.uid, [...this.subjects]);
       }
+      this.cdr.detectChanges();
       return;
     }
 
@@ -160,6 +171,7 @@ export class Subjects implements OnInit {
     if (this.uid) {
       Subjects.subjectsCache.set(this.uid, [...this.subjects]);
     }
+    this.cdr.detectChanges();
   }
 
   displayIcon(icon: string | null | undefined): string {
@@ -178,11 +190,10 @@ export class Subjects implements OnInit {
       clearTimeout(this.postSaveRefreshTimer);
     }
 
-    // Background sync keeps local list consistent with Firestore.
     this.postSaveRefreshTimer = setTimeout(() => {
       void this.loadSubjects(true);
       this.postSaveRefreshTimer = null;
-    }, 500);
+    }, 150);
   }
 
   openSubject(subjectId: string): void {
@@ -197,10 +208,12 @@ export class Subjects implements OnInit {
     ev?.preventDefault();
     ev?.stopPropagation();
     this.infoSubject = subject;
+    this.cdr.detectChanges();
   }
 
   closeInfo(): void {
     this.infoSubject = null;
+    this.cdr.detectChanges();
   }
 
   onEditFromInfo(subject: any): void {
@@ -211,6 +224,7 @@ export class Subjects implements OnInit {
     this.editDataForAddModal = subject;
     this.selectedSubject = null;
     this.showModal = true;
+    this.cdr.detectChanges();
   }
 
   async onDeleteFromInfo(subjectId: string): Promise<void> {
