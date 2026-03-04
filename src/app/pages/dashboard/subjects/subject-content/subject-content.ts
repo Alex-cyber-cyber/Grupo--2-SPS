@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
-import { Firestore, doc, getDoc, runTransaction } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { filter } from 'rxjs/operators';
 
 import { MatIconModule } from '@angular/material/icon';
@@ -263,33 +263,33 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     return base || 'Guía';
   }
 
+  private escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   private formatGuideName(version: number): string {
     const v = String(version).padStart(2, '0');
     return `${this.baseGuideName()} ${v}`;
   }
 
-  private async peekNextGuideVersion(): Promise<number> {
-    const ref = doc(this.firestore, `subjects/${this.subjectId}`);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return 1;
-    const data: any = snap.data();
-    const current = Number(data?.guideSeq ?? 0);
-    if (!Number.isFinite(current) || current < 0) return 1;
-    return current + 1;
-  }
+  private async computeNextGuideVersion(): Promise<number> {
+    const base = this.baseGuideName();
+    const guidesCol = collection(this.firestore, 'studyGuides');
+    const qRef = query(guidesCol, where('subjectId', '==', this.subjectId));
+    const snap = await getDocs(qRef);
 
-  private async reserveNextGuideVersion(): Promise<number> {
-    const ref = doc(this.firestore, `subjects/${this.subjectId}`);
-    const next = await runTransaction(this.firestore, async (tx) => {
-      const snap = await tx.get(ref);
-      const data: any = snap.exists() ? snap.data() : {};
-      const current = Number(data?.guideSeq ?? 0);
-      const safeCurrent = Number.isFinite(current) && current >= 0 ? current : 0;
-      const newValue = safeCurrent + 1;
-      tx.set(ref, { guideSeq: newValue }, { merge: true });
-      return newValue;
+    const rx = new RegExp(`^${this.escapeRegex(base)}\\s+(\\d{2,})$`);
+    let max = 0;
+
+    snap.forEach((d) => {
+      const name = String((d.data() as any)?.name ?? '').trim();
+      const m = name.match(rx);
+      if (!m) return;
+      const n = Number(m[1]);
+      if (Number.isFinite(n) && n > max) max = n;
     });
-    return Number(next);
+
+    return max + 1;
   }
 
   async openStudyGuideNameModal() {
@@ -303,7 +303,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
     let next = 1;
     try {
-      next = await this.peekNextGuideVersion();
+      next = await this.computeNextGuideVersion();
     } catch {
       next = 1;
     }
@@ -335,7 +335,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
     let version = 1;
     try {
-      version = await this.reserveNextGuideVersion();
+      version = await this.computeNextGuideVersion();
     } catch {
       version = 1;
     }
