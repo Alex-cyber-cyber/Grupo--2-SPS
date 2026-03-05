@@ -1,13 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule, AsyncPipe } from '@angular/common';
-import { RouterModule } from '@angular/router';  
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
-import { AsyncPipe } from '@angular/common';
 import { UiService } from '../../../services/ui.service';
 
 import { Observable } from 'rxjs';
 import { User } from '@angular/fire/auth';
-
 
 @Component({
   selector: 'app-topbar',
@@ -15,31 +13,21 @@ import { User } from '@angular/fire/auth';
   imports: [
     CommonModule,
     AsyncPipe,
-    RouterModule   // ✅ ESTE ES EL PASO 3
+    RouterModule, // ✅ ESTE ES EL PASO 3
   ],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css',
 })
-
 export class TopbarComponent {
-
   private ui = inject(UiService);
   authService = inject(AuthService);
+  user$!: Observable<User | null>;
+
+  constructor(private auth: AuthService) {
+    this.user$ = this.auth.user$;
+  }
 
   toggleSidebar() {
     this.ui.toggleSidebar();
   }
 }
-
-export class Topbar {
-
-  user$!: Observable<User | null>;
-
-  constructor(private auth: AuthService) {
-
-    this.user$ = this.auth.user$;
-
-  }
-
-}
-

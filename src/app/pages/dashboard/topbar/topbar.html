@@ -1,10 +1,7 @@
 <div class="topbar">
   <div class="topbar-left">
-
     <!-- BOTÓN HAMBURGUESA (solo móvil / tablet) -->
-    <button class="menu-btn" (click)="toggleSidebar()">
-      ☰
-    </button>
+    <button class="menu-btn" (click)="toggleSidebar()">☰</button>
 
     <!-- LOGO (en desktop solo decorativo, en móvil puede abrir también si quieres) -->
     <img src="imagen/Jaguar.png" alt="logo" class="logo" />
@@ -16,35 +13,21 @@
       <span class="icon">🔔</span>
       <span class="badge">3</span>
     </div>
+    <div
+      class="profile"
+      routerLink="/dashboard/profile"
+      style="cursor: pointer"
+      *ngIf="user$ | async as user"
+    >
+      <img
+        class="avatar"
+        [src]="(user$ | async)?.photoURL || '/imagen/Juan Perez.jpg'"
+        alt="Avatar"
+      />
 
-    <div class="profile">
-      <img src="imagen/Juan Perez.jpg" alt="avatar" class="avatar" />
       <span class="username">
-        {{ (authService.user$ | async)?.displayName || 'Usuario' }}
+        {{ user.displayName || user.email }}
       </span>
     </div>
-
-   <div
-  class="profile"
-  routerLink="/dashboard/profile"
-  style="cursor: pointer;"
-  *ngIf="user$ | async as user"
->
-
-  <img
-  class="avatar"
-  [src]="(user$ | async)?.photoURL || '/imagen/Juan Perez.jpg'"
-  alt="Avatar"
-/>
-
-
-  <span class="username">
-    {{ user.displayName || user.email }}
-  </span>
-
-</div>
-
-
-
   </div>
 </div>
