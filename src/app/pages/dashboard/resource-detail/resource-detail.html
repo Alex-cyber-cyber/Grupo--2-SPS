@@ -1,0 +1,18 @@
+<div class="detail-page">
+
+  <!-- Botón Volver -->
+  
+  <h2>{{ recurso.titulo }}</h2>
+
+  <div *ngFor="let sec of recurso.resultJson.secciones" class="section">
+    <h3>{{ sec.titulo }}</h3>
+    <ul>
+      <li *ngFor="let p of sec.preguntas">{{ p }}</li>
+    </ul>
+  </div>
+
+  <div class="actions">
+    <button class="export" (click)="exportar()">Exportar</button>
+    <button class="danger" (click)="eliminar()">Eliminar</button>
+  </div>
+</div>

@@ -1,6 +1,6 @@
 .topbar {
   height: 70px;
-  background-color: #ffffff; 
+  background-color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -9,7 +9,7 @@
   font-family: 'Segoe UI', sans-serif;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1100;
 }
 
 
@@ -20,25 +20,34 @@
 }
 
 .topbar-left .logo {
-  width: 90px; 
-  height: 90px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
 }
 
 .topbar-left .app-name {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #8B0D21;
 }
 
-/* Notificaciones y perfil */
+
+.menu-btn {
+  font-size: 26px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: none;
+  color: #8B0D21;
+}
+
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 25px;
 }
 
-/* Notificaciones */
+
 .notification {
   position: relative;
   cursor: pointer;
@@ -49,7 +58,7 @@
   position: absolute;
   top: -6px;
   right: -8px;
-  background-color: #E4002B; 
+  background-color: #E4002B;
   color: #fff;
   font-size: 12px;
   font-weight: bold;
@@ -61,7 +70,7 @@
   justify-content: center;
 }
 
-/* Perfil usuario */
+
 .profile {
   display: flex;
   align-items: center;
@@ -74,11 +83,22 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #E4002B; 
+  border: 2px solid #E4002B;
 }
 
 .profile .username {
   font-size: 1rem;
   font-weight: 500;
-  color: #1f2937; 
+  color: #1f2937;
+}
+
+
+@media (max-width: 768px) {
+  .menu-btn {
+    display: block;
+  }
+
+  .app-name {
+    display: none;
+  }
 }
