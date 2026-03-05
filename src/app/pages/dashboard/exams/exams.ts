@@ -30,6 +30,7 @@ export class Exams implements OnInit {
   examFinished = false;
   score = 0;
   totalPoints = 0;
+  attemptStartedAtMs: number | null = null;
 
   constructor(
     private examsService: ExamsService,
@@ -76,6 +77,7 @@ export class Exams implements OnInit {
   startExam(): void {
     if (!this.selectedExam) return;
     this.resetExamState();
+    this.attemptStartedAtMs = Date.now();
     this.view = 'taking';
     this.cdr.detectChanges();
   }
@@ -87,6 +89,7 @@ export class Exams implements OnInit {
     this.examFinished = false;
     this.score = 0;
     this.totalPoints = 0;
+    this.attemptStartedAtMs = null;
   }
 
   get currentQuestion(): ExamQuestion | null {
@@ -188,8 +191,17 @@ export class Exams implements OnInit {
     };
 
     try {
-      await this.examsService.saveResults(this.selectedExam.id, results);
+      const elapsedMinutes = Math.max(
+        1,
+        Math.ceil((Date.now() - (this.attemptStartedAtMs ?? Date.now())) / 60000),
+      );
+      await this.examsService.saveResults(this.selectedExam.id, results, elapsedMinutes);
       this.selectedExam.results = results;
+      this.selectedExam.completedAttempts = (this.selectedExam.completedAttempts ?? 0) + 1;
+      const history = this.selectedExam.completedHistory ?? [];
+      this.selectedExam.completedHistory = [...history, new Date()];
+      const durations = this.selectedExam.completedDurations ?? [];
+      this.selectedExam.completedDurations = [...durations, elapsedMinutes];
     } catch (e) {
       console.error('Error guardando resultados:', e);
     }
