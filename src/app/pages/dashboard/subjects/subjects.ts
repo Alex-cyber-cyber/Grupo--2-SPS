@@ -11,7 +11,6 @@ import { SubjectsService } from '../../../services/subjects.service';
 import { AddSubjectModal } from '../../../shared/add-subject-modal/add-subject-modal';
 import { EditSubjectModal } from './edit-subject-modal/edit-subject-modal';
 import { SubjectInfoModal } from './subject-info-modal/subject-info-modal';
-import { EventsService } from '../../../services/events/events.service';
 
 type SubjectModalCloseEvent = {
   saved: boolean;
@@ -50,7 +49,6 @@ export class Subjects implements OnInit {
 
   constructor(
     private subjectsService: SubjectsService,
-    private eventsService: EventsService,
     private router: Router,
     private auth: Auth,
     private zone: NgZone,
@@ -195,8 +193,7 @@ export class Subjects implements OnInit {
     }, 150);
   }
 
-  async openSubject(subjectId: string): Promise<void> {
-    await this.eventsService.trackSubjectOpened(subjectId);
+  openSubject(subjectId: string): void {
     this.router.navigate(['/dashboard/subjects', subjectId, 'content'], {
       queryParams: { _r: Date.now() },
     });
@@ -209,7 +206,6 @@ export class Subjects implements OnInit {
   openInfo(subject: any, ev?: Event): void {
     ev?.preventDefault();
     ev?.stopPropagation();
-    if (subject?.id) void this.eventsService.trackSubjectOpened(subject.id);
     this.infoSubject = subject;
     this.cdr.detectChanges();
   }

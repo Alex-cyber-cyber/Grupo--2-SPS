@@ -23,16 +23,6 @@
       style="cursor: pointer"
       *ngIf="user$ | async as user"
     >
-      <img
-        class="avatar"
-        [src]="(user$ | async)?.photoURL || '/imagen/Juan Perez.jpg'"
-        alt="Avatar"
-      />
-
-
-      <span class="username">
-        {{ user.displayName || user.email }}
-      </span>
     </div>
 
     <div class="profile" routerLink="/dashboard/profile" style="cursor: pointer" *ngIf="user$ | async as user">

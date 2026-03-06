@@ -12,7 +12,6 @@ import { SidebarComponent } from './sidebar/sidebar';
 
 import { EventsService } from '../../services/events/events.service';
 
-import { TopbarComponent } from './topbar/topbar';
 
 
 @Component({
