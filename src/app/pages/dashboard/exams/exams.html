@@ -60,6 +60,43 @@
           </div>
         }
       </div>
+
+      @if (completedExams.length > 0) {
+        <div class="ex-history-section">
+          <h2 class="ex-history-title">
+            <mat-icon>history</mat-icon>
+            Historial de exámenes
+          </h2>
+          <div class="ex-history-list">
+            @for (exam of completedExams; track exam.id) {
+              <div class="ex-history-item" (click)="openHistoryReview(exam)">
+                <div class="ex-history-icon">
+                  <mat-icon>assignment_turned_in</mat-icon>
+                </div>
+                <div class="ex-history-info">
+                  <span class="ex-history-name">{{ exam.name }}</span>
+                  <span class="ex-history-meta">
+                    {{ getDifficultyLabel(exam.difficulty) }} · {{ exam.exam.questions.length }} preguntas
+                  </span>
+                </div>
+                <div class="ex-history-score-col">
+                  <span
+                    class="ex-history-percent"
+                    [class.good]="getHistoryScorePercent(exam) >= 70"
+                    [class.bad]="getHistoryScorePercent(exam) < 70"
+                  >
+                    {{ getHistoryScorePercent(exam) }}%
+                  </span>
+                  <span class="ex-history-pts">
+                    {{ exam.results!.score }}/{{ exam.results!.totalPoints }} pts
+                  </span>
+                </div>
+                <mat-icon class="ex-history-arrow">chevron_right</mat-icon>
+              </div>
+            }
+          </div>
+        </div>
+      }
     }
   }
 
@@ -117,6 +154,127 @@
           </button>
         </div>
       </div>
+    </div>
+  }
+
+  @if (view === 'history-review' && selectedExam) {
+    <div class="ex-review">
+      <button class="ex-back-btn" (click)="backToList()">← Volver al historial</button>
+
+      <div class="ex-review-summary">
+        <h2>{{ selectedExam.name }}</h2>
+        <div class="ex-review-score-bar">
+          <span
+            class="ex-review-percent"
+            [class.good]="getHistoryScorePercent(selectedExam) >= 70"
+            [class.bad]="getHistoryScorePercent(selectedExam) < 70"
+          >
+            {{ getHistoryScorePercent(selectedExam) }}%
+          </span>
+          <span class="ex-review-pts">
+            {{ selectedExam.results!.score }}/{{ selectedExam.results!.totalPoints }} pts
+          </span>
+          <span class="ex-badge ex-badge-diff">{{ getDifficultyLabel(selectedExam.difficulty) }}</span>
+        </div>
+      </div>
+
+      <div class="ex-review-progress">
+        <span>Pregunta {{ reviewQuestionIndex + 1 }} de {{ reviewTotalQuestions }}</span>
+        <div class="ex-progress-bar">
+          <div
+            class="ex-progress-fill"
+            [style.width.%]="((reviewQuestionIndex + 1) / reviewTotalQuestions) * 100"
+          ></div>
+        </div>
+      </div>
+
+      @if (reviewQuestion) {
+        <div class="ex-question-card">
+          <div class="ex-question-header">
+            <span class="ex-question-type">
+              {{ reviewQuestion.type === 'multiple_choice' ? 'Opción múltiple' : 'Verdadero/Falso' }}
+            </span>
+            <span class="ex-question-points">{{ reviewQuestion.points }} pts</span>
+          </div>
+
+          <p class="ex-question-prompt">{{ reviewQuestion.prompt }}</p>
+
+          @if (reviewQuestion.type === 'multiple_choice' && reviewQuestion.choices) {
+            <div class="ex-choices">
+              @for (choice of reviewQuestion.choices; track choice; let i = $index) {
+                <button
+                  class="ex-choice"
+                  [class.selected]="getReviewAnswer(reviewQuestion.id)?.selected === i"
+                  [class.correct]="reviewQuestion.correctChoiceIndex === i"
+                  [class.wrong]="
+                    getReviewAnswer(reviewQuestion.id)?.selected === i &&
+                    reviewQuestion.correctChoiceIndex !== i
+                  "
+                  disabled
+                >
+                  <span class="ex-choice-letter">{{ ['A', 'B', 'C', 'D', 'E'][i] }}</span>
+                  <span class="ex-choice-text">{{ choice }}</span>
+                </button>
+              }
+            </div>
+          }
+
+          @if (reviewQuestion.type === 'true_false') {
+            <div class="ex-tf-options">
+              <button
+                class="ex-tf-btn"
+                [class.selected]="getReviewAnswer(reviewQuestion.id)?.selected === 'Verdadero'"
+                [class.correct]="reviewQuestion.correctAnswer === 'Verdadero'"
+                [class.wrong]="
+                  getReviewAnswer(reviewQuestion.id)?.selected === 'Verdadero' &&
+                  reviewQuestion.correctAnswer !== 'Verdadero'
+                "
+                disabled
+              >
+                Verdadero
+              </button>
+              <button
+                class="ex-tf-btn"
+                [class.selected]="getReviewAnswer(reviewQuestion.id)?.selected === 'Falso'"
+                [class.correct]="reviewQuestion.correctAnswer === 'Falso'"
+                [class.wrong]="
+                  getReviewAnswer(reviewQuestion.id)?.selected === 'Falso' &&
+                  reviewQuestion.correctAnswer !== 'Falso'
+                "
+                disabled
+              >
+                Falso
+              </button>
+            </div>
+          }
+
+          <div
+            class="ex-result-feedback"
+            [class.correct]="getReviewAnswer(reviewQuestion.id)?.correct"
+            [class.wrong]="!getReviewAnswer(reviewQuestion.id)?.correct"
+          >
+            <mat-icon class="ex-feedback-icon">{{
+              getReviewAnswer(reviewQuestion.id)?.correct ? 'check_circle' : 'cancel'
+            }}</mat-icon>
+            <span>{{ getReviewAnswer(reviewQuestion.id)?.correct ? '¡Correcto!' : 'Incorrecto' }}</span>
+          </div>
+
+          @if (reviewQuestion.explanation) {
+            <div class="ex-explanation">
+              <strong>Explicación:</strong> {{ reviewQuestion.explanation }}
+            </div>
+          }
+
+          <div class="ex-question-actions">
+            @if (reviewQuestionIndex > 0) {
+              <button class="ex-check-btn" (click)="reviewPrev()">Anterior</button>
+            }
+            @if (reviewQuestionIndex < reviewTotalQuestions - 1) {
+              <button class="ex-next-btn" (click)="reviewNext()">Siguiente</button>
+            }
+          </div>
+        </div>
+      }
     </div>
   }
 

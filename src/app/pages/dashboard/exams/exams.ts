@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ExamsService, ExamDoc, ExamResults } from '../../../services/exams.service';
 import { ExamQuestion } from '../../../services/open-router.service';
 
-type ExamView = 'list' | 'detail' | 'taking';
+type ExamView = 'list' | 'detail' | 'taking' | 'history-review';
 
 @Component({
   selector: 'app-exams',
@@ -31,6 +31,9 @@ export class Exams implements OnInit {
   score = 0;
   totalPoints = 0;
   attemptStartedAtMs: number | null = null;
+
+  // History review
+  reviewQuestionIndex = 0;
 
   constructor(
     private examsService: ExamsService,
@@ -257,5 +260,57 @@ export class Exams implements OnInit {
 
   hasResults(exam: ExamDoc): boolean {
     return !!exam.results?.completed;
+  }
+
+  // --- History ---
+
+  get completedExams(): ExamDoc[] {
+    return this.exams
+      .filter((e) => e.results?.completed)
+      .sort((a, b) => {
+        const dateA = a.results?.completedAt ? new Date(a.results.completedAt).getTime() : 0;
+        const dateB = b.results?.completedAt ? new Date(b.results.completedAt).getTime() : 0;
+        return dateB - dateA;
+      })
+      .slice(0, 5);
+  }
+
+  openHistoryReview(exam: ExamDoc): void {
+    this.selectedExam = exam;
+    this.reviewQuestionIndex = 0;
+    this.view = 'history-review';
+    this.cdr.detectChanges();
+  }
+
+  get reviewQuestion(): ExamQuestion | null {
+    if (!this.selectedExam) return null;
+    return this.selectedExam.exam.questions[this.reviewQuestionIndex] ?? null;
+  }
+
+  get reviewTotalQuestions(): number {
+    return this.selectedExam?.exam.questions.length ?? 0;
+  }
+
+  reviewNext(): void {
+    if (this.reviewQuestionIndex < this.reviewTotalQuestions - 1) {
+      this.reviewQuestionIndex++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  reviewPrev(): void {
+    if (this.reviewQuestionIndex > 0) {
+      this.reviewQuestionIndex--;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getReviewAnswer(questionId: string): { selected: string | number; correct: boolean } | null {
+    return this.selectedExam?.results?.answers?.[questionId] ?? null;
+  }
+
+  getHistoryScorePercent(exam: ExamDoc): number {
+    if (!exam.results || exam.results.totalPoints === 0) return 0;
+    return Math.round((exam.results.score / exam.results.totalPoints) * 100);
   }
 }
