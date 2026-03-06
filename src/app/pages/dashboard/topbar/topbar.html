@@ -1,6 +1,12 @@
 <div class="topbar">
   <div class="topbar-left">
+    <!-- BOTÓN HAMBURGUESA (solo móvil / tablet) -->
+    <button class="menu-btn" (click)="toggleSidebar()">☰</button>
+
+    <!-- LOGO (en desktop solo decorativo, en móvil puede abrir también si quieres) -->
+
     <button class="menu-btn" (click)="toggleSidebar()">&#9776;</button>
+
 
     <img src="imagen/Jaguar.png" alt="logo" class="logo" />
     <span class="app-name">Jaguar Mind</span>
@@ -10,6 +16,23 @@
     <div class="notification">
       <span class="icon">&#128276;</span>
       <span class="badge">3</span>
+    </div>
+    <div
+      class="profile"
+      routerLink="/dashboard/profile"
+      style="cursor: pointer"
+      *ngIf="user$ | async as user"
+    >
+      <img
+        class="avatar"
+        [src]="(user$ | async)?.photoURL || '/imagen/Juan Perez.jpg'"
+        alt="Avatar"
+      />
+
+
+      <span class="username">
+        {{ user.displayName || user.email }}
+      </span>
     </div>
 
     <div class="profile" routerLink="/dashboard/profile" style="cursor: pointer" *ngIf="user$ | async as user">
