@@ -38,7 +38,7 @@
     <div class="confirm-body">
       <div class="field">
         <label>Nombre</label>
-        <input type="text" [(ngModel)]="nameDraft" placeholder="Ej: Guía para el parcial 1" />
+        <input type="text" [(ngModel)]="nameDraft" readonly />
       </div>
 
       <div class="confirm-actions">
@@ -109,10 +109,7 @@
     </div>
   </div>
 
-  <div
-    class="ai-panel"
-    *ngIf="aiError || studyGuide || exam || generatingStudyGuide || generatingExam"
-  >
+  <div class="ai-panel" *ngIf="aiError || studyGuide || exam || generatingStudyGuide || generatingExam">
     <div class="ai-panel-head">
       <div>
         <h3>Resultados IA</h3>
@@ -122,9 +119,7 @@
 
     <div class="ai-error" *ngIf="aiError">{{ aiError }}</div>
 
-    <div class="ai-loading" *ngIf="lastSavedStudyGuideId && studyGuide">
-      Guía guardada en Firebase.
-    </div>
+    <div class="ai-loading" *ngIf="lastSavedStudyGuideId && studyGuide">Guía guardada en Firebase.</div>
 
     <div class="ai-loading" *ngIf="lastSavedExamId && exam">Examen guardado en Firebase.</div>
 
@@ -175,9 +170,7 @@
           <li *ngFor="let c of q.choices">{{ c }}</li>
         </ol>
         <div class="ai-answer" *ngIf="q.correctChoiceIndex != null || q.correctAnswer">
-          <div *ngIf="q.correctChoiceIndex != null">
-            Respuesta: opción {{ q.correctChoiceIndex + 1 }}
-          </div>
+          <div *ngIf="q.correctChoiceIndex != null">Respuesta: opción {{ q.correctChoiceIndex + 1 }}</div>
           <div *ngIf="q.correctAnswer">Respuesta: {{ q.correctAnswer }}</div>
           <div *ngIf="q.explanation">Explicación: {{ q.explanation }}</div>
         </div>
@@ -221,11 +214,7 @@
 
       <div class="field">
         <label>Contenido</label>
-        <textarea
-          [(ngModel)]="formText"
-          [readonly]="isView"
-          placeholder="Escribe tu contenido aquí..."
-        ></textarea>
+        <textarea [(ngModel)]="formText" [readonly]="isView" placeholder="Escribe tu contenido aquí..."></textarea>
       </div>
 
       <div class="form-actions">
@@ -252,9 +241,7 @@
       <div class="actions">
         <button class="action-btn" type="button" (click)="openView(c)">Ver</button>
         <button class="action-btn" type="button" (click)="openEdit(c)">Editar</button>
-        <button class="action-btn action-danger" type="button" (click)="askDelete(c)">
-          Eliminar
-        </button>
+        <button class="action-btn action-danger" type="button" (click)="askDelete(c)">Eliminar</button>
       </div>
     </div>
   </div>
@@ -277,9 +264,7 @@
     <div class="confirm-body">
       <div class="confirm-item">
         <div class="confirm-item-title">{{ pendingDelete?.title || 'Contenido' }}</div>
-        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">
-          #{{ pendingDelete.tags.join(' #') }}
-        </div>
+        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">#{{ pendingDelete.tags.join(' #') }}</div>
       </div>
 
       <div class="confirm-actions">

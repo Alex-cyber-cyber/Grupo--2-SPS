@@ -46,9 +46,11 @@
 
     <div class="jm-row jm-row-2">
       <div class="jm-field">
-        <label>Universidad (opcional)</label>
-        <input type="text" formControlName="university" placeholder="Ej: CEUTEC, UNITEC..." />
-      </div>
+       <label>Selecciona tu Sede (opcional)</label> 
+       <select formControlName="university"> <option value="">Selecciona un campus</option> 
+        <option *ngFor="let u of universityOptions" [value]="u"> {{ u }} </option> 
+      </select>
+     </div>
 
       <div class="jm-field">
         <label>Carrera (opcional)</label>

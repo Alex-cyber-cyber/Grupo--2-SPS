@@ -878,3 +878,16 @@
   color:#dc2626;
 }
 
+.page-header-actions {
+  display: flex;
+  flex-wrap: wrap;       
+  gap: 10px;            
+}
+
+.page-header-actions button {
+  flex: 0 1 auto;         
+  min-width: 120px;      
+  display: inline-flex;   
+  align-items: center;
+  justify-content: center;
+}

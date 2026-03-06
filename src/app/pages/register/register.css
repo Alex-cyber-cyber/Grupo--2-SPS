@@ -502,8 +502,8 @@ body {
 
 .check-container {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
 }
 
 .check input {
@@ -531,19 +531,20 @@ body {
 
 .check input:checked ~ .checkmark svg {
   opacity: 1;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .checkmark svg {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   fill: white;
   opacity: 0;
-  transition: all 0.3s ease;
+  transform: translate(-50%, -50%) scale(0.6);
+  transform-origin: center;
+  transition: all 0.25s ease;
 }
 
 .check-text {

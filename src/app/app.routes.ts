@@ -32,7 +32,7 @@ export const routes: Routes = [
       {
         path: 'subjects/:subjectId/content',
         loadComponent: () =>
-          import('../app/pages/dashboard/subjects/subject-content/subject-content').then(
+          import('./pages/dashboard/subjects/subject-content/subject-content').then(
             (m) => m.SubjectContentComponent,
           ),
       },
@@ -51,7 +51,6 @@ export const routes: Routes = [
 
   {
     path: 'ai/generate',
-
     loadComponent: () => import('./pages/ai/generate/generate').then((m) => m.Generate),
   },
 

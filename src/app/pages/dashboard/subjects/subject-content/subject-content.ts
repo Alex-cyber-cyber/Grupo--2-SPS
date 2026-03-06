@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectorRef, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, getDocs, query, where } from '@angular/fire/firestore';
+import { filter } from 'rxjs/operators';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,10 +30,25 @@ type PanelMode = 'create' | 'view' | 'edit';
   imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule],
 })
 export class SubjectContentComponent implements OnInit, OnDestroy {
+  private readonly zone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly contentService = inject(ContentService);
+  private readonly router = inject(Router);
+  private readonly firestore = inject(Firestore);
+  private readonly openRouter = inject(OpenRouterService);
+  private readonly studyGuides = inject(StudyGuidesService);
+  private readonly examsService = inject(ExamsService);
+
   subjectId = '';
   subjectName = '';
   contents = signal<any[]>([]);
   private unsubscribe?: Unsubscribe;
+  private navSub?: any;
+  private paramSub?: any;
+
+  private lastNonEmptyContents: any[] = [];
+  private contentsInitialized = false;
 
   panelOpen = false;
   panelMode: PanelMode = 'create';
@@ -62,22 +78,64 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
   private readonly defaultModel = 'openai/gpt-4o-mini';
 
-  constructor(
-    private route: ActivatedRoute,
-    private contentService: ContentService,
-    private router: Router,
-    private firestore: Firestore,
-    private openRouter: OpenRouterService,
-    private studyGuides: StudyGuidesService,
-    private examsService: ExamsService,
-    private cdr: ChangeDetectorRef,
-  ) {}
-
   private refreshView() {
     try {
       this.cdr.detectChanges();
-    } catch {
-      // no-op
+    } catch {}
+  }
+
+  private setContentsSafely(items: any[]) {
+    const arr = Array.isArray(items) ? items : [];
+
+    if (arr.length > 0) {
+      this.lastNonEmptyContents = arr;
+      this.contents.set(arr);
+      this.contentsInitialized = true;
+      this.refreshView();
+      return;
+    }
+
+    if (!this.contentsInitialized) {
+      this.contents.set([]);
+      this.contentsInitialized = true;
+      this.refreshView();
+      return;
+    }
+
+    if (this.lastNonEmptyContents.length > 0) {
+      this.contents.set(this.lastNonEmptyContents);
+      this.refreshView();
+      return;
+    }
+
+    this.contents.set([]);
+    this.refreshView();
+  }
+
+  private resubscribeContents() {
+    if (!this.subjectId) return;
+
+    if (this.unsubscribe) {
+      try {
+        this.unsubscribe();
+      } catch {}
+      this.unsubscribe = undefined;
+    }
+
+    this.unsubscribe = this.contentService.observeContents(this.subjectId, (items) => {
+      this.zone.run(() => this.setContentsSafely(items));
+    });
+  }
+
+  private async loadSubjectName() {
+    const snap = await getDoc(doc(this.firestore, `subjects/${this.subjectId}`));
+    if (snap.exists()) {
+      const data: any = snap.data();
+      const name = String(data?.name ?? '').trim();
+      this.zone.run(() => {
+        this.subjectName = name;
+        this.refreshView();
+      });
     }
   }
 
@@ -102,27 +160,54 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('subjectId');
-    if (!id) {
-      this.router.navigate(['/dashboard/subjects']);
-      return;
-    }
+    this.paramSub = this.route.paramMap.subscribe(async (pm) => {
+      const id = pm.get('subjectId');
+      if (!id) {
+        this.router.navigate(['/dashboard/subjects']);
+        return;
+      }
 
-    this.subjectId = id;
+      const changed = this.subjectId !== id;
+      this.subjectId = id;
 
-    const snap = await getDoc(doc(this.firestore, `subjects/${this.subjectId}`));
-    if (snap.exists()) {
-      const data: any = snap.data();
-      this.subjectName = String(data?.name ?? '').trim();
-    }
+      if (changed) {
+        this.contentsInitialized = false;
+        this.lastNonEmptyContents = [];
+        this.contents.set([]);
+        this.refreshView();
+      }
 
-    this.unsubscribe = this.contentService.observeContents(this.subjectId, (items) =>
-      this.contents.set(items),
-    );
+      await this.loadSubjectName();
+      this.resubscribeContents();
+      this.zone.run(() => this.refreshView());
+    });
+
+    this.navSub = this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => {
+        this.zone.run(() => {
+          this.resubscribeContents();
+          this.refreshView();
+        });
+      });
   }
 
   ngOnDestroy() {
-    if (this.unsubscribe) this.unsubscribe();
+    if (this.unsubscribe) {
+      try {
+        this.unsubscribe();
+      } catch {}
+    }
+    if (this.navSub) {
+      try {
+        this.navSub.unsubscribe();
+      } catch {}
+    }
+    if (this.paramSub) {
+      try {
+        this.paramSub.unsubscribe();
+      } catch {}
+    }
   }
 
   goBack() {
@@ -173,50 +258,109 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     return lines.join('\n').trim();
   }
 
-  openStudyGuideNameModal() {
-    this.aiError = null;
-    this.lastSavedStudyGuideId = null;
-    this.nameDraft = (this.subjectName || 'Guía de estudio').trim();
-    this.nameModalOpen = true;
-    this.refreshView();
+  private baseGuideName(): string {
+    const base = (this.subjectName || '').trim();
+    return base || 'Guía';
+  }
+
+  private escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private formatGuideName(version: number): string {
+    const v = String(version).padStart(2, '0');
+    return `${this.baseGuideName()} ${v}`;
+  }
+
+  private async computeNextGuideVersion(): Promise<number> {
+    const base = this.baseGuideName();
+    const guidesCol = collection(this.firestore, 'studyGuides');
+    const qRef = query(guidesCol, where('subjectId', '==', this.subjectId));
+    const snap = await getDocs(qRef);
+
+    const rx = new RegExp(`^${this.escapeRegex(base)}\\s+(\\d{2,})$`);
+    let max = 0;
+
+    snap.forEach((d) => {
+      const name = String((d.data() as any)?.name ?? '').trim();
+      const m = name.match(rx);
+      if (!m) return;
+      const n = Number(m[1]);
+      if (Number.isFinite(n) && n > max) max = n;
+    });
+
+    return max + 1;
+  }
+
+  async openStudyGuideNameModal() {
+    this.zone.run(() => {
+      this.aiError = null;
+      this.lastSavedStudyGuideId = null;
+      this.nameDraft = '';
+      this.nameModalOpen = true;
+      this.refreshView();
+    });
+
+    let next = 1;
+    try {
+      next = await this.computeNextGuideVersion();
+    } catch {
+      next = 1;
+    }
+
+    this.zone.run(() => {
+      this.nameDraft = this.formatGuideName(next);
+      this.refreshView();
+    });
   }
 
   closeStudyGuideNameModal() {
-    this.nameModalOpen = false;
-    this.refreshView();
+    this.zone.run(() => {
+      this.nameModalOpen = false;
+      this.refreshView();
+    });
   }
 
   async confirmStudyGuideNameAndGenerate() {
-    const name = (this.nameDraft || '').trim();
-    if (!name) {
-      this.aiError = 'Ponle un nombre a la guía.';
-      return;
+    if (this.generatingStudyGuide || this.generatingExam) return;
+
+    this.zone.run(() => {
+      this.nameModalOpen = false;
+      this.aiError = null;
+      this.studyGuide = null;
+      this.lastSavedStudyGuideId = null;
+      this.generatingStudyGuide = true;
+      this.refreshView();
+    });
+
+    let version = 1;
+    try {
+      version = await this.computeNextGuideVersion();
+    } catch {
+      version = 1;
     }
 
-    this.nameModalOpen = false;
-    this.refreshView();
+    const name = this.formatGuideName(version);
     await this.generateStudyGuideFromContents(name);
   }
 
   private async generateStudyGuideFromContents(name: string) {
-    if (this.generatingStudyGuide || this.generatingExam) return;
-
-    this.aiError = null;
-    this.studyGuide = null;
-    this.lastSavedStudyGuideId = null;
+    if (this.generatingExam) return;
 
     const apiKey = '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';
 
     const studentContent = this.buildStudentContentFromContents();
     if (studentContent.length < 50) {
-      this.aiError = 'No hay contenido suficiente para generar la guía.';
+      this.zone.run(() => {
+        this.aiError = 'No hay contenido suficiente para generar la guía.';
+        this.generatingStudyGuide = false;
+        this.refreshView();
+      });
       return;
     }
 
-    this.generatingStudyGuide = true;
-    this.refreshView();
     try {
-      this.studyGuide = await this.openRouter.generateStudyGuide({
+      const result = await this.openRouter.generateStudyGuide({
         apiKey,
         model: this.defaultModel,
         studentContent,
@@ -225,18 +369,35 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         durationMinutes: 60,
       });
 
-      const text = this.studyGuideToText(this.studyGuide);
-      this.lastSavedStudyGuideId = await this.studyGuides.createStudyGuide({
+      this.zone.run(() => {
+        this.studyGuide = result;
+        this.refreshView();
+      });
+
+      const text = this.studyGuideToText(result);
+
+      const savedId = await this.studyGuides.createStudyGuide({
         name,
         text,
         subjectId: this.subjectId,
-        topic: this.studyGuide.topic,
+        topic: result.topic,
+      });
+
+      this.zone.run(() => {
+        this.lastSavedStudyGuideId = savedId;
+        this.refreshView();
       });
     } catch (e) {
-      this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+      this.zone.run(() => {
+        this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+        this.refreshView();
+      });
     } finally {
-      this.generatingStudyGuide = false;
-      this.refreshView();
+      this.zone.run(() => {
+        this.generatingStudyGuide = false;
+        this.refreshView();
+      });
+      this.resubscribeContents();
     }
   }
 
@@ -258,33 +419,47 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     const name = (this.examNameDraft || '').trim();
     if (!name) {
       this.aiError = 'Ponle un nombre al examen.';
+      this.refreshView();
       return;
     }
 
-    this.examModalOpen = false;
-    this.refreshView();
+    if (this.generatingStudyGuide || this.generatingExam) return;
+
+    this.zone.run(() => {
+      this.examModalOpen = false;
+      this.aiError = null;
+      this.exam = null;
+      this.lastSavedExamId = null;
+      this.generatingExam = true;
+      this.refreshView();
+    });
+
     await this.generateExamFromContents(name, this.examDifficultyDraft);
   }
 
   private async generateExamFromContents(name: string, difficulty: ExamDifficulty) {
-    if (this.generatingStudyGuide || this.generatingExam) return;
+    if (this.generatingStudyGuide) return;
 
     this.aiError = null;
     this.exam = null;
     this.lastSavedExamId = null;
 
+
+
     const apiKey = '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';
 
     const studentContent = this.buildStudentContentFromContents();
     if (studentContent.length < 50) {
-      this.aiError = 'No hay contenido suficiente para generar el examen.';
+      this.zone.run(() => {
+        this.aiError = 'No hay contenido suficiente para generar el examen.';
+        this.generatingExam = false;
+        this.refreshView();
+      });
       return;
     }
 
-    this.generatingExam = true;
-    this.refreshView();
     try {
-      this.exam = await this.openRouter.generateExam({
+      const result = await this.openRouter.generateExam({
         apiKey,
         model: this.defaultModel,
         studentContent,
@@ -294,18 +469,34 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         durationMinutes: 60,
       });
 
-      this.lastSavedExamId = await this.examsService.createExam({
+      this.zone.run(() => {
+        this.exam = result;
+        this.refreshView();
+      });
+
+      const savedId = await this.examsService.createExam({
         name,
-        topic: this.exam.topic,
-        difficulty: this.exam.difficulty,
+        topic: result.topic,
+        difficulty: result.difficulty,
         subjectId: this.subjectId,
-        exam: this.exam.exam,
+        exam: result.exam,
+      });
+
+      this.zone.run(() => {
+        this.lastSavedExamId = savedId;
+        this.refreshView();
       });
     } catch (e) {
-      this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+      this.zone.run(() => {
+        this.aiError = e instanceof Error ? e.message : 'Error desconocido';
+        this.refreshView();
+      });
     } finally {
-      this.generatingExam = false;
-      this.refreshView();
+      this.zone.run(() => {
+        this.generatingExam = false;
+        this.refreshView();
+      });
+      this.resubscribeContents();
     }
   }
 
@@ -361,19 +552,14 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     if (this.panelMode === 'create') {
       await this.contentService.pasteText(this.subjectId, title, text, tags);
       this.closePanel();
+      this.resubscribeContents();
       return;
     }
 
     if (this.panelMode === 'edit') {
       if (!this.activeContentId) return;
 
-      await this.contentService.updateTextContent(
-        this.subjectId,
-        this.activeContentId,
-        title,
-        text,
-        tags,
-      );
+      await this.contentService.updateTextContent(this.subjectId, this.activeContentId, title, text, tags);
 
       const updated = this.contents().map((x) =>
         x.id === this.activeContentId ? { ...x, title, extractedText: text, tags } : x,
@@ -381,6 +567,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.contents.set(updated);
 
       this.closePanel();
+      this.resubscribeContents();
       return;
     }
   }
@@ -404,5 +591,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     this.contents.set(filtered);
 
     this.closeConfirm();
+    this.resubscribeContents();
   }
 }

@@ -3,6 +3,9 @@
   flex-direction:column;
   gap:18px;
   padding:22px 26px;
+  max-width: 1200px;      
+  margin: 0 auto;         
+  box-sizing: border-box;  
 }
 
 .jm-header{
@@ -395,4 +398,24 @@
   .jm-subjects{ padding:16px; }
   .jm-header{ flex-direction:column; align-items:stretch; }
   .jm-header-actions{ justify-content:flex-end; }
+}
+
+@media (min-width: 1024px) {
+  .jm-subjects {
+    padding-left: 30px; 
+    padding-right: 30px;
+  }
+}
+
+@media (max-width: 900px) {
+  .jm-subjects {
+    padding: 16px;
+  }
+  .jm-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .jm-header-actions {
+    justify-content: flex-end;
+  }
 }
