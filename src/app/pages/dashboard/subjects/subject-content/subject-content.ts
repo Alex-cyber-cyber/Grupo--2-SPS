@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, signal, ChangeDetectorRef, NgZone, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  signal,
+  ChangeDetectorRef,
+  NgZone,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Unsubscribe } from 'firebase/firestore';
@@ -13,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ContentService } from '../../../../services/subject-contents.service';
 import { StudyGuidesService } from '../../../../services/study-guides.service';
 import { ExamsService } from '../../../../services/exams.service';
+import { EventsService } from '../../../../services/events/events.service';
 import {
   ExamDifficulty,
   GeneratedExamResponse,
@@ -39,6 +48,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   private readonly openRouter = inject(OpenRouterService);
   private readonly studyGuides = inject(StudyGuidesService);
   private readonly examsService = inject(ExamsService);
+  private readonly eventsService = inject(EventsService);
 
   subjectId = '';
   subjectName = '';
@@ -169,6 +179,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
       const changed = this.subjectId !== id;
       this.subjectId = id;
+      void this.eventsService.trackSubjectOpened(this.subjectId);
 
       if (changed) {
         this.contentsInitialized = false;

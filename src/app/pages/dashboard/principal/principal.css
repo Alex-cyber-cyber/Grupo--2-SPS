@@ -59,6 +59,10 @@ p {
   color: #E4002B;
 }
 
+.metric-line {
+  margin: 4px 0;
+}
+
 
 .charts {
   display: flex;

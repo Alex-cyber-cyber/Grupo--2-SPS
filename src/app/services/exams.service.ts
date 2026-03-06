@@ -27,6 +27,9 @@ export type ExamDoc = {
   createdAt: Date;
   updatedAt: Date;
   results?: ExamResults;
+  completedAttempts?: number;
+  completedHistory?: Date[];
+  completedDurations?: number[];
 };
 
 export type ExamResults = {
@@ -86,6 +89,19 @@ export class ExamsService {
 
     const exams = snapshot.docs.map((d) => {
       const data = d.data();
+      const completedHistoryRaw = Array.isArray(data['completedHistory'])
+        ? (data['completedHistory'] as unknown[])
+        : [];
+      const completedHistory = completedHistoryRaw
+        .map((x) => this.toDate(x))
+        .filter((x): x is Date => x instanceof Date);
+      const completedDurationsRaw = Array.isArray(data['completedDurations'])
+        ? (data['completedDurations'] as unknown[])
+        : [];
+      const completedDurations = completedDurationsRaw
+        .map((x) => Number(x))
+        .filter((x) => Number.isFinite(x) && x > 0);
+
       return {
         id: d.id,
         uid: data['uid'],
@@ -97,6 +113,9 @@ export class ExamsService {
         createdAt: (data['createdAt'] as Timestamp)?.toDate() ?? new Date(),
         updatedAt: (data['updatedAt'] as Timestamp)?.toDate() ?? new Date(),
         results: data['results'] ?? undefined,
+        completedAttempts: Number(data['completedAttempts']) || 0,
+        completedHistory,
+        completedDurations,
       };
     });
 
@@ -114,6 +133,18 @@ export class ExamsService {
 
     const data = snap.data();
     if (data['uid'] !== user.uid) return null;
+    const completedHistoryRaw = Array.isArray(data['completedHistory'])
+      ? (data['completedHistory'] as unknown[])
+      : [];
+    const completedHistory = completedHistoryRaw
+      .map((x) => this.toDate(x))
+      .filter((x): x is Date => x instanceof Date);
+    const completedDurationsRaw = Array.isArray(data['completedDurations'])
+      ? (data['completedDurations'] as unknown[])
+      : [];
+    const completedDurations = completedDurationsRaw
+      .map((x) => Number(x))
+      .filter((x) => Number.isFinite(x) && x > 0);
 
     return {
       id: snap.id,
@@ -126,10 +157,13 @@ export class ExamsService {
       createdAt: (data['createdAt'] as Timestamp)?.toDate() ?? new Date(),
       updatedAt: (data['updatedAt'] as Timestamp)?.toDate() ?? new Date(),
       results: data['results'] ?? undefined,
+      completedAttempts: Number(data['completedAttempts']) || 0,
+      completedHistory,
+      completedDurations,
     };
   }
 
-  async saveResults(examId: string, results: ExamResults): Promise<void> {
+  async saveResults(examId: string, results: ExamResults, attemptDurationMinutes?: number): Promise<void> {
     const user = this.auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
 
@@ -138,8 +172,27 @@ export class ExamsService {
     if (!snap.exists()) throw new Error('Examen no encontrado');
     if (snap.data()['uid'] !== user.uid) throw new Error('No autorizado');
 
+    const data = snap.data();
+    const rawHistory = Array.isArray(data['completedHistory']) ? (data['completedHistory'] as unknown[]) : [];
+    const history = rawHistory
+      .map((x) => this.toDate(x))
+      .filter((x): x is Date => x instanceof Date)
+      .map((x) => x.toISOString());
+
+    const rawDurations = Array.isArray(data['completedDurations']) ? (data['completedDurations'] as unknown[]) : [];
+    const durations = rawDurations
+      .map((x) => Number(x))
+      .filter((x) => Number.isFinite(x) && x > 0);
+
+    const safeDuration = Math.max(1, Math.round(Number(attemptDurationMinutes) || 0));
+    history.push(new Date().toISOString());
+    durations.push(safeDuration);
+
     await updateDoc(docRef, {
       results,
+      completedAttempts: history.length,
+      completedHistory: history,
+      completedDurations: durations,
       updatedAt: serverTimestamp(),
     });
   }
@@ -154,5 +207,22 @@ export class ExamsService {
     if (snap.data()['uid'] !== user.uid) throw new Error('No autorizado');
 
     await deleteDoc(docRef);
+  }
+
+  private toDate(value: unknown): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string') {
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    const maybeTs = value as { toDate?: () => Date };
+    if (typeof maybeTs.toDate === 'function') {
+      const d = maybeTs.toDate();
+      return d instanceof Date ? d : null;
+    }
+
+    return null;
   }
 }
