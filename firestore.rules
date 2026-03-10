@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnerOfSubject(subjectId) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/subjects/$(subjectId)).data.createdBy == request.auth.uid;
+    }
+
+    function isOwnerOfExam(data) {
+      return signedIn() && data.uid == request.auth.uid;
+    }
+
+    function isOwnerOfStudyGuide(data) {
+      return signedIn() && data.uid == request.auth.uid;
+    }
+
+    function isOwnerRecord(data) {
+      return signedIn() && data.uid == request.auth.uid;
+    }
+
+    function isValidStudyGuide(data) {
+      return data.keys().hasOnly([
+        'uid', 'name', 'text', 'subjectId', 'topic', 'createdAt', 'updatedAt'
+      ])
+      && data.uid is string
+      && data.name is string
+      && data.text is string
+      && data.name.size() > 0
+      && data.name.size() <= 80
+      && data.text.size() > 0
+      && data.text.size() <= 200000
+      && (!('subjectId' in data) || data.subjectId is string)
+      && (!('topic' in data) || data.topic is string)
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidExam(data) {
+      return data.uid is string
+      && data.name is string
+      && data.name.size() > 0
+      && data.name.size() <= 100
+      && data.exam is map
+      && data.difficulty in ['basico', 'intermedio', 'avanzado']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId;
+      allow delete: if signedIn() && request.auth.uid == userId;
+
+      match /notifications/{notificationId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+
+        allow create: if signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['title', 'message', 'type', 'read', 'source', 'createdAt'])
+          && request.resource.data.title is string
+          && request.resource.data.message is string
+          && request.resource.data.type in ['success', 'error', 'info']
+          && request.resource.data.read is bool
+          && (!('source' in request.resource.data) || request.resource.data.source is string)
+          && request.resource.data.createdAt is timestamp;
+
+        allow update: if signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['read'])
+          && request.resource.data.read is bool;
+
+        allow delete: if false;
+      }
+    }
+
+    match /subjects/{subjectId} {
+      allow read, create: if signedIn();
+      allow update, delete: if isOwnerOfSubject(subjectId);
+
+      match /contents/{contentId} {
+        allow read, create, update, delete: if isOwnerOfSubject(subjectId);
+      }
+    }
+
+    match /userSubjects/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == request.resource.data.uid;
+
+      allow update: if signedIn()
+        && request.auth.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['archived', 'archivedAt']);
+
+      allow delete: if signedIn() && request.auth.uid == resource.data.uid;
+    }
+
+    match /studyGuides/{studyGuideId} {
+      allow create: if isOwnerOfStudyGuide(request.resource.data)
+                    && isValidStudyGuide(request.resource.data);
+
+      allow read: if isOwnerOfStudyGuide(resource.data);
+
+      allow update: if isOwnerOfStudyGuide(resource.data)
+                    && isOwnerOfStudyGuide(request.resource.data)
+                    && isValidStudyGuide(request.resource.data)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt >= resource.data.updatedAt;
+
+      allow delete: if isOwnerOfStudyGuide(resource.data);
+    }
+
+    match /exams/{examId} {
+      allow create: if isOwnerOfExam(request.resource.data)
+                    && isValidExam(request.resource.data);
+
+      allow read: if isOwnerOfExam(resource.data);
+
+      allow update: if isOwnerOfExam(resource.data)
+                    && isOwnerOfExam(request.resource.data)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if isOwnerOfExam(resource.data);
+    }
+
+    match /studyEvents/{eventId} {
+      allow create: if isOwnerRecord(request.resource.data);
+      allow read: if isOwnerRecord(resource.data);
+      allow update, delete: if false;
+    }
+
+    match /userDailyStats/{statsId} {
+      allow create: if isOwnerRecord(request.resource.data);
+      allow read: if isOwnerRecord(resource.data);
+
+      allow update: if isOwnerRecord(resource.data)
+                    && isOwnerRecord(request.resource.data)
+                    && request.resource.data.uid == resource.data.uid;
+
+      allow delete: if isOwnerRecord(resource.data);
+    }
+
+    match /events/{eventId} {
+      allow create: if signedIn();
+      allow read, update, delete: if false;
+    }
+  }
+}

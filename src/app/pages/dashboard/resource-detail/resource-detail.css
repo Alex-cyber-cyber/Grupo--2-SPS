@@ -1,7 +1,10 @@
 /* Contenedor general */
+body {
+    font-family: 'Times New Roman', serif;
+}
 .detail-page {
   padding: 30px;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Times New Roman', serif;
   color: #333;
   max-width: 900px;
   margin: 0 auto;

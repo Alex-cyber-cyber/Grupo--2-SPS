@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Unsubscribe } from 'firebase/firestore';
 import { FormsModule } from '@angular/forms';
 import { Firestore, doc, getDoc, collection, getDocs, query, where } from '@angular/fire/firestore';
+import { Auth } from '@angular/fire/auth';
 import { filter } from 'rxjs/operators';
 
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ContentService } from '../../../services/subject-contents.service';
 import { StudyGuidesService } from '../../../services/study-guides.service';
 import { ExamsService } from '../../../services/exams.service';
+import { NotificationsService } from '../../../services/notifications.service';
 import {
   ExamDifficulty,
   GeneratedExamResponse,
@@ -36,9 +38,11 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   private readonly contentService = inject(ContentService);
   private readonly router = inject(Router);
   private readonly firestore = inject(Firestore);
+  private readonly auth = inject(Auth);
   private readonly openRouter = inject(OpenRouterService);
   private readonly studyGuides = inject(StudyGuidesService);
   private readonly examsService = inject(ExamsService);
+  private readonly notificationsService = inject(NotificationsService);
 
   subjectId = '';
   subjectName = '';
@@ -136,6 +140,27 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.subjectName = name;
         this.refreshView();
       });
+    }
+  }
+
+  private async notifyGuideCreated(name: string) {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) {
+      console.warn('No hay usuario autenticado para registrar la notificación');
+      return;
+    }
+
+    try {
+      const notificationId = await this.notificationsService.createNotification(uid, {
+        title: 'Guía creada',
+        message: `La guía "${name}" fue generada correctamente.`,
+        type: 'success',
+        source: 'study-guide-created',
+      });
+
+      console.log('Notificación creada correctamente', { notificationId, uid, name });
+    } catch (error) {
+      console.error('No se pudo crear la notificación de guía creada', { uid, name, error });
     }
   }
 
@@ -360,6 +385,12 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
 
     try {
+      console.log('Iniciando generación de guía', {
+        subjectId: this.subjectId,
+        subjectName: this.subjectName,
+        guideName: name,
+      });
+
       const result = await this.openRouter.generateStudyGuide({
         apiKey,
         model: this.defaultModel,
@@ -383,11 +414,17 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         topic: result.topic,
       });
 
+      console.log('Guía guardada correctamente', { savedId, guideName: name });
+
       this.zone.run(() => {
         this.lastSavedStudyGuideId = savedId;
         this.refreshView();
       });
+
+      await this.notifyGuideCreated(name);
     } catch (e) {
+      console.error('Error al generar o guardar la guía', e);
+
       this.zone.run(() => {
         this.aiError = e instanceof Error ? e.message : 'Error desconocido';
         this.refreshView();

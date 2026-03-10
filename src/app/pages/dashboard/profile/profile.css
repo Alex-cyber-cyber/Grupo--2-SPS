@@ -1,6 +1,8 @@
 :host{ display:block; overflow-x:hidden; }
 *{ box-sizing:border-box; }
-
+body {
+    font-family: 'Times New Roman', serif;
+}
 /* ===== COLORES ===== */
 :root{
   --bg:#f4f6f9;
