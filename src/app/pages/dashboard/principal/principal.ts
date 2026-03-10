@@ -537,10 +537,18 @@ export class Principal implements AfterViewInit, OnDestroy {
           },
         },
         scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+          },
           y: {
             beginAtZero: true,
             ticks: {
               stepSize: 1,
+            },
+            grid: {
+              display: false,
             },
           },
         },
@@ -571,10 +579,18 @@ export class Principal implements AfterViewInit, OnDestroy {
           },
         },
         scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+          },
           y: {
             beginAtZero: true,
             ticks: {
               stepSize: 1,
+            },
+            grid: {
+              display: false,
             },
           },
         },
@@ -604,11 +620,24 @@ export class Principal implements AfterViewInit, OnDestroy {
             position: 'bottom',
           },
         },
+        indexAxis: 'y',
         scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+            },
+            grid: {
+              display: false,
+            },
+          },
           y: {
             beginAtZero: true,
             ticks: {
               stepSize: 1,
+            },
+            grid: {
+              display: false,
             },
           },
         },
@@ -664,6 +693,10 @@ export class Principal implements AfterViewInit, OnDestroy {
             callbacks: {
               label: (ctx) => {
                 const value = Number(ctx.parsed?.y ?? 0);
+                if (value > 0 && value < 0.5) {
+                  const minutes = Math.max(1, Math.round(value * 60));
+                  return `Tiempo de estudio: ${minutes} min`;
+                }
                 return `Horas de estudio: ${value.toFixed(1)} h`;
               },
             },
@@ -676,6 +709,14 @@ export class Principal implements AfterViewInit, OnDestroy {
             ticks: {
               stepSize: 0.5,
               callback: (value) => `${Number(value).toFixed(1)} h`,
+            },
+            grid: {
+              display: false,
+            },
+          },
+          x: {
+            grid: {
+              display: false,
             },
           },
         },
@@ -752,16 +793,32 @@ export class Principal implements AfterViewInit, OnDestroy {
         const color = pluginOptions?.color || '#0f172a';
         const fontSize = pluginOptions?.fontSize || 11;
         const fontWeight = pluginOptions?.fontWeight || 500;
+        const indexAxis = (chart.config.options as { indexAxis?: string } | undefined)?.indexAxis;
+        const isHorizontal = indexAxis === 'y';
+        const chartArea = chart.chartArea;
         ctx.save();
         ctx.fillStyle = color;
         ctx.font = `${fontWeight} ${fontSize}px 'Segoe UI', Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
+        ctx.textAlign = isHorizontal ? 'left' : 'center';
+        ctx.textBaseline = isHorizontal ? 'middle' : 'bottom';
         meta.data.forEach((element: any, idx: number) => {
           const value = dataset.data[idx];
           if (value == null) return;
           const pos = element.tooltipPosition();
-          ctx.fillText(String(value), pos.x, pos.y - 6);
+          if (isHorizontal) {
+            const label = String(value);
+            const padding = 6;
+            let x = pos.x + padding;
+            let align: CanvasTextAlign = 'left';
+            if (x > chartArea.right - padding) {
+              x = pos.x - padding;
+              align = 'right';
+            }
+            ctx.textAlign = align;
+            ctx.fillText(label, x, pos.y);
+          } else {
+            ctx.fillText(String(value), pos.x, pos.y - 6);
+          }
         });
         ctx.restore();
       },

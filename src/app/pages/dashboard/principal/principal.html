@@ -14,14 +14,14 @@
     <div class="streak-metrics">
       <div class="streak-metric">
         <span class="streak-label">Actual</span>
-        <strong>{{ currentStreak }} dias</strong>
+        <strong>{{ currentStreak }} {{ currentStreak === 1 ? 'dia' : 'dias' }}</strong>
       </div>
       <div class="streak-metric">
         <span class="streak-label">Mejor</span>
         <strong>{{ bestStreak }} dias</strong>
       </div>
       <div class="streak-metric">
-        <span class="streak-label">Semana</span>
+        <span class="streak-label">Esta semana</span>
         <strong>{{ formatDuration(weeklyTotalMinutes) }}</strong>
       </div>
       <div class="streak-metric">
