@@ -1,3 +1,7 @@
+body {
+    font-family: 'Times New Roman', serif;
+}
+
 .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
 .muted { opacity: .75; }
 .small { font-size: 13px; }

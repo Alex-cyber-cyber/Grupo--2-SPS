@@ -1,6 +1,10 @@
+body {
+    font-family: 'Times New Roman', serif;
+}
+
 .resources-page {
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Times New Roman', serif;
   color: #333;
 }
 

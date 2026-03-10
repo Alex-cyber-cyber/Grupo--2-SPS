@@ -7,12 +7,36 @@
   </div>
 
   <div class="topbar-right">
-    <div class="notification">
-      <span class="icon">&#128276;</span>
-      <span class="badge">3</span>
+    <div class="notification-container">
+      <button type="button" class="notification" (click)="toggleNotifications()">
+        <span class="icon">&#128276;</span>
+        <span class="badge">{{ unreadCount }}</span>
+      </button>
+
+      <div class="notification-panel" *ngIf="showNotifications">
+        <div class="notification-header">
+          <h4>Notificaciones</h4>
+        </div>
+
+        <div class="notification-empty" *ngIf="notifications.length === 0">
+          <p>Tienes 0 notificaciones</p>
+        </div>
+
+        <div class="notification-list" *ngIf="notifications.length > 0">
+          <div class="notification-item" *ngFor="let item of notifications">
+            <div class="notification-item-title">{{ item.title }}</div>
+            <div class="notification-item-message">{{ item.message }}</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="profile" routerLink="/dashboard/profile" style="cursor: pointer" *ngIf="user$ | async as user">
+    <div
+      class="profile"
+      routerLink="/dashboard/profile"
+      style="cursor: pointer"
+      *ngIf="user$ | async as user"
+    >
       <img class="avatar" [src]="user.photoURL || '/imagen/Juan Perez.jpg'" alt="Avatar" />
       <span class="username">{{ user.displayName || user.email || 'Usuario' }}</span>
     </div>

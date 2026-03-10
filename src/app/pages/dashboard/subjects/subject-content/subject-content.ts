@@ -451,6 +451,12 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   private async generateExamFromContents(name: string, difficulty: ExamDifficulty) {
     if (this.generatingStudyGuide) return;
 
+    this.aiError = null;
+    this.exam = null;
+    this.lastSavedExamId = null;
+
+
+
     const apiKey = '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';
 
     const studentContent = this.buildStudentContentFromContents();

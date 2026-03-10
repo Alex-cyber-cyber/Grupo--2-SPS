@@ -3,9 +3,16 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 
+
+
+
 import { TopbarComponent } from './topbar/topbar';
+
 import { SidebarComponent } from './sidebar/sidebar';
+
 import { EventsService } from '../../services/events/events.service';
+
+
 
 @Component({
   selector: 'app-dashboard',

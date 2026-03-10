@@ -60,6 +60,13 @@ export class AddSubjectModal implements OnInit {
     'Otra',
   ];
 
+  universityOptions: string[] = 
+  [ 'El Prado - Tegucigalpa', 
+    'Centroamérica - Tegucigalpa', 
+    'Norte - San Pedro Sula', 
+    'Central - San Pedro Sula', 
+    'La Ceiba' ];
+
   timeOptions: { value: string; label: string }[] = [];
   form: FormGroup;
 

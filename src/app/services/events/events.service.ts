@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from '@angular/fire/firestore';
 
 type DailyStatsDoc = {
@@ -54,27 +55,31 @@ export class EventsService {
     const now = new Date();
     const dateKey = this.toDateKey(now);
     const statsRef = doc(this.firestore, 'userDailyStats', `${uid}_${dateKey}`);
+    const eventRef = doc(collection(this.firestore, 'studyEvents'));
 
     try {
-      await Promise.all([
-        addDoc(collection(this.firestore, 'studyEvents'), {
+      const batch = writeBatch(this.firestore);
+
+      batch.set(eventRef, {
+        uid,
+        subjectId,
+        eventType: 'subject_opened',
+        createdAt: serverTimestamp(),
+      });
+
+      batch.set(
+        statsRef,
+        {
           uid,
-          subjectId,
-          eventType: 'subject_opened',
-          createdAt: serverTimestamp(),
-        }),
-        setDoc(
-          statsRef,
-          {
-            uid,
-            dateKey,
-            totalConsultations: increment(1),
-            [`subjectViews.${subjectId}`]: increment(1),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        ),
-      ]);
+          dateKey,
+          totalConsultations: increment(1),
+          [`subjectViews.${subjectId}`]: increment(1),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      await batch.commit();
     } catch (error) {
       console.error('No se pudo registrar subject_opened', { uid, subjectId, error });
     }
@@ -87,27 +92,31 @@ export class EventsService {
     const now = new Date();
     const dateKey = this.toDateKey(now);
     const statsRef = doc(this.firestore, 'userDailyStats', `${uid}_${dateKey}`);
+    const eventRef = doc(collection(this.firestore, 'studyEvents'));
 
     try {
-      await Promise.all([
-        addDoc(collection(this.firestore, 'studyEvents'), {
+      const batch = writeBatch(this.firestore);
+
+      batch.set(eventRef, {
+        uid,
+        subjectId,
+        eventType: 'study_time_logged',
+        durationSeconds,
+        createdAt: serverTimestamp(),
+      });
+
+      batch.set(
+        statsRef,
+        {
           uid,
-          subjectId,
-          eventType: 'study_time_logged',
-          durationSeconds,
-          createdAt: serverTimestamp(),
-        }),
-        setDoc(
-          statsRef,
-          {
-            uid,
-            dateKey,
-            studySeconds: increment(durationSeconds),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        ),
-      ]);
+          dateKey,
+          studySeconds: increment(durationSeconds),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      await batch.commit();
     } catch (error) {
       console.error('No se pudo registrar study_time_logged', { uid, subjectId, durationSeconds, error });
       this.addLocalStudySeconds(uid, dateKey, durationSeconds);
@@ -121,26 +130,30 @@ export class EventsService {
     const now = new Date();
     const dateKey = this.toDateKey(now);
     const statsRef = doc(this.firestore, 'userDailyStats', `${uid}_${dateKey}`);
+    const eventRef = doc(collection(this.firestore, 'studyEvents'));
 
     try {
-      await Promise.all([
-        addDoc(collection(this.firestore, 'studyEvents'), {
+      const batch = writeBatch(this.firestore);
+
+      batch.set(eventRef, {
+        uid,
+        eventType: 'session_time_logged',
+        durationSeconds,
+        createdAt: serverTimestamp(),
+      });
+
+      batch.set(
+        statsRef,
+        {
           uid,
-          eventType: 'session_time_logged',
-          durationSeconds,
-          createdAt: serverTimestamp(),
-        }),
-        setDoc(
-          statsRef,
-          {
-            uid,
-            dateKey,
-            studySeconds: increment(durationSeconds),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        ),
-      ]);
+          dateKey,
+          studySeconds: increment(durationSeconds),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      await batch.commit();
     } catch (error) {
       console.error('No se pudo registrar session_time_logged', { uid, durationSeconds, error });
       this.addLocalStudySeconds(uid, dateKey, durationSeconds);
@@ -338,6 +351,7 @@ export class EventsService {
     } catch {}
   }
 
+
   getLiveStudyStorageKey(uid: string): string {
     return `${EventsService.LIVE_SECONDS_PREFIX}${uid}`;
   }
@@ -358,3 +372,6 @@ export class EventsService {
     }
   }
 }
+
+}
+

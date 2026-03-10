@@ -1,3 +1,6 @@
+body {
+    font-family: 'Times New Roman', serif;
+}
 .sidebar {
   position: fixed;
   top: 70px;
