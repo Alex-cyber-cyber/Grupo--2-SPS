@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ExamsService, ExamDoc, ExamResults } from '../../../services/exams.service';
 import { ExamQuestion } from '../../../services/open-router.service';
-
+import { FormsModule } from '@angular/forms';
 type ExamView = 'list' | 'detail' | 'taking' | 'history-review';
 
 @Component({
   selector: 'app-exams',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, FormsModule],
   templateUrl: './exams.html',
   styleUrl: './exams.css',
 })
@@ -17,13 +17,15 @@ export class Exams implements OnInit {
   readonly Math = Math;
 
   exams: ExamDoc[] = [];
+  filteredExams: ExamDoc[] = [];
+
   loading = true;
   error = '';
-
+  selectedSubject: string = 'Todas';
+  subjects: string[] = [];
   view: ExamView = 'list';
   selectedExam: ExamDoc | null = null;
   deleteConfirmId: string | null = null;
-
   currentQuestionIndex = 0;
   userAnswers: Record<string, string | number> = {};
   showResult = false;
@@ -44,25 +46,37 @@ export class Exams implements OnInit {
     this.loadExams();
   }
 
-  async loadExams(): Promise<void> {
-    this.loading = true;
-    this.error = '';
+ async loadExams(): Promise<void> {
+  this.loading = true;
+  this.error = '';
+  this.cdr.detectChanges();
+
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Tiempo de espera agotado')), 15000),
+  );
+  try {
+    this.exams = await Promise.race([this.examsService.getMyExams(), timeout]);
+    this.filteredExams = this.exams;
+    this.extractSubjects();
+    this.updateFilter();
+  } catch (e: any) {
+    console.error('Error cargando exámenes:', e);
+    this.error = e.message || 'Error al cargar exámenes';
+  } finally {
+    this.loading = false;
     this.cdr.detectChanges();
-
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Tiempo de espera agotado')), 15000),
-    );
-
-    try {
-      this.exams = await Promise.race([this.examsService.getMyExams(), timeout]);
-    } catch (e: any) {
-      console.error('Error cargando exámenes:', e);
-      this.error = e.message || 'Error al cargar exámenes';
-    } finally {
-      this.loading = false;
-      this.cdr.detectChanges();
-    }
   }
+}
+
+updateFilter(): void {
+  if (!this.selectedSubject || this.selectedSubject === 'Todas') {
+    this.filteredExams = this.exams;
+    } else {
+    this.filteredExams = this.exams.filter(
+    exam => (exam.topic || '').trim().toLowerCase() === this.selectedSubject.trim().toLowerCase()
+    );
+    }
+    }
 
   openDetail(exam: ExamDoc): void {
     this.selectedExam = exam;
@@ -105,9 +119,24 @@ export class Exams implements OnInit {
   }
 
   get hasAnswered(): boolean {
-    if (!this.currentQuestion) return false;
-    return this.userAnswers[this.currentQuestion.id] !== undefined;
+  if (!this.currentQuestion) return false;
+  return this.userAnswers[this.currentQuestion.id] !== undefined;
   }
+
+  get examsCount(): number {
+  return this.filteredExams.length;
+  }
+
+  private extractSubjects(): void {
+  const subjectsSet = new Set<string>();
+  this.exams.forEach(exam => {
+    if (exam.topic) {
+      subjectsSet.add(exam.topic.trim());
+    }
+  });
+  this.subjects = ['Todas', ...Array.from(subjectsSet)];
+  }
+
 
   selectChoice(index: number): void {
     if (!this.currentQuestion || this.showResult) return;
@@ -176,7 +205,6 @@ export class Exams implements OnInit {
       } else if (q.type === 'true_false') {
         correct = userAnswer === q.correctAnswer;
       }
-
       if (correct) score += q.points;
       answers[q.id] = { selected: userAnswer, correct };
     }
