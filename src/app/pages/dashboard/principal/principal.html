@@ -2,40 +2,105 @@
   <h1>Bienvenido a JAGUAR MIND</h1>
   <p>Este es tu dashboard principal.</p>
 
-  <div class="cards">
-    <div class="card">
-      <div class="card-header"><span>&#128218;</span><h3>Mis materias</h3></div>
-      <p>Todas tus materias organizadas en un solo lugar.</p>
+  <section class="streak-card">
+    <div class="streak-heading">
+      <span class="streak-icon">&#128293;</span>
+      <div>
+        <h2>Racha de estudio</h2>
+        <p>Resumen rapido de tu consistencia y tiempo acumulado.</p>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-header"><span>&#128221;</span><h3>Genera examenes</h3></div>
-      <p>Revisa tus materias y prepara tus proximos examenes.</p>
+    <div class="streak-metrics">
+      <div class="streak-metric">
+        <span class="streak-label">Actual</span>
+        <strong>{{ currentStreak }} {{ currentStreak === 1 ? 'dia' : 'dias' }}</strong>
+      </div>
+      <div class="streak-metric">
+        <span class="streak-label">Mejor</span>
+        <strong>{{ bestStreak }} dias</strong>
+      </div>
+      <div class="streak-metric">
+        <span class="streak-label">Esta semana</span>
+        <strong>{{ formatDuration(weeklyTotalMinutes) }}</strong>
+      </div>
+      <div class="streak-metric">
+        <span class="streak-label">Hoy</span>
+        <strong>{{ formatDuration(todayStudyMinutes) }}</strong>
+      </div>
     </div>
-
-    <div class="card">
-      <div class="card-header"><span>&#11088;</span><h3>Guias de estudio</h3></div>
-      <p>Accede rapido a tus recursos favoritos.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span>&#128293;</span><h3>Racha de estudio</h3></div>
-      <p class="metric-line">Actual: <strong>{{ currentStreak }}</strong> dias</p>
-      <p class="metric-line">Mejor: <strong>{{ bestStreak }}</strong> dias</p>
-      <p class="metric-line">Semana: <strong>{{ formatDuration(weeklyTotalMinutes) }}</strong></p>
-      <p class="metric-line">Hoy: <strong>{{ formatDuration(todayStudyMinutes) }}</strong></p>
-    </div>
-  </div>
+  </section>
 
   <div class="charts">
     <div class="chart-card">
       <h3>Materias mas estudiadas (examenes)</h3>
-      <canvas #materiasCanvas></canvas>
+      <div class="chart-canvas-wrap">
+        <canvas #materiasCanvas></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Examenes creados por clase</h3>
+      <div class="chart-canvas-wrap">
+        <canvas #examenesCreadosCanvas></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Guias generadas por clase</h3>
+      <div class="chart-canvas-wrap">
+        <canvas #guiasCanvas></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header-inline">
+        <h3>Examenes pendientes por materia</h3>
+        <div class="chips" *ngIf="zeroCompletedSubjects.length">
+          <span class="chip-title">Sin exámenes realizados:</span>
+          <div class="chip" *ngFor="let label of zeroCompletedSubjects">{{ label }}</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas #pendientesCanvas></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card calendar-card">
+      <div class="calendar-header">
+        <h3>Calendario de estudio</h3>
+        <span>{{ currentMonthLabel }}</span>
+      </div>
+
+      <div class="calendar-weekdays">
+        <span>Lun</span>
+        <span>Mar</span>
+        <span>Mie</span>
+        <span>Jue</span>
+        <span>Vie</span>
+        <span>Sab</span>
+        <span>Dom</span>
+      </div>
+
+      <div class="calendar-grid">
+        <div
+          *ngFor="let day of calendarDays"
+          class="calendar-day"
+          [class.outside-month]="!day.inCurrentMonth"
+          [class.placeholder]="!day.dayNumber"
+          [class.studied]="day.studied"
+          [class.today]="day.isToday"
+        >
+          {{ day.dayNumber }}
+        </div>
+      </div>
     </div>
 
     <div class="chart-card">
       <h3>Tiempo semanal de estudio (horas)</h3>
-      <canvas #tiempoCanvas></canvas>
+      <div class="chart-canvas-wrap">
+        <canvas #tiempoCanvas></canvas>
+      </div>
     </div>
   </div>
 </div>

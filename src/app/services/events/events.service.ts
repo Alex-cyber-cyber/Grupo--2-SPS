@@ -28,6 +28,7 @@ export type DashboardMetrics = {
   topSubjects: Array<{ subjectId: string; consultations: number }>;
   currentStreak: number;
   bestStreak: number;
+  studyDateKeys: string[];
 };
 
 @Injectable({
@@ -36,6 +37,7 @@ export type DashboardMetrics = {
 export class EventsService {
   private static readonly STREAK_MIN_SECONDS = 10 * 60;
   private static readonly LOCAL_SECONDS_PREFIX = 'jm_study_seconds_';
+  private static readonly LIVE_SECONDS_PREFIX = 'jm_live_study_seconds_';
 
   constructor(
     private firestore: Firestore,
@@ -167,6 +169,7 @@ export class EventsService {
         topSubjects: [],
         currentStreak: 0,
         bestStreak: 0,
+        studyDateKeys: [],
       };
     }
 
@@ -202,8 +205,20 @@ export class EventsService {
       byDate.set(dateKey, existing);
     }
 
+    const liveSession = this.readLiveStudySeconds(uid);
+    for (const [dateKey, seconds] of liveSession.entries()) {
+      const existing = byDate.get(dateKey) ?? { uid, dateKey, studySeconds: 0 };
+      const current = Number(existing.studySeconds) || 0;
+      existing.studySeconds = current + seconds;
+      byDate.set(dateKey, existing);
+    }
+
     const { weeklyStudyHours, weeklyStudyMinutes } = this.buildCurrentWeek(byDate);
     const { currentStreak, bestStreak } = this.computeStreaks(byDate);
+    const studyDateKeys = [...byDate.entries()]
+      .filter(([, item]) => (Number(item.studySeconds) || 0) > 0)
+      .map(([dateKey]) => dateKey)
+      .sort();
     const topSubjects = [...subjectTotals.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -215,6 +230,7 @@ export class EventsService {
       topSubjects,
       currentStreak,
       bestStreak,
+      studyDateKeys,
     };
   }
 
@@ -334,4 +350,28 @@ export class EventsService {
       window.localStorage.setItem(this.localKey(uid), JSON.stringify(asObject));
     } catch {}
   }
+
+
+  getLiveStudyStorageKey(uid: string): string {
+    return `${EventsService.LIVE_SECONDS_PREFIX}${uid}`;
+  }
+
+  private readLiveStudySeconds(uid: string): Map<string, number> {
+    if (typeof window === 'undefined' || !window.sessionStorage) return new Map<string, number>();
+
+    try {
+      const raw = window.sessionStorage.getItem(this.getLiveStudyStorageKey(uid));
+      if (!raw) return new Map<string, number>();
+      const parsed = JSON.parse(raw) as Record<string, number>;
+      const entries = Object.entries(parsed)
+        .map(([k, v]) => [k, Number(v)] as const)
+        .filter(([, v]) => Number.isFinite(v) && v > 0);
+      return new Map<string, number>(entries);
+    } catch {
+      return new Map<string, number>();
+    }
+  }
 }
+
+}
+
