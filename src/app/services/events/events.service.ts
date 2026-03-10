@@ -373,5 +373,5 @@ export class EventsService {
   }
 }
 
-}
+
 

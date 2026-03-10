@@ -284,6 +284,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   }
 
   private async computeNextGuideVersion(): Promise<number> {
+    
     const base = this.baseGuideName();
     const guidesCol = collection(this.firestore, 'studyGuides');
     const qRef = query(guidesCol, where('subjectId', '==', this.subjectId));
@@ -302,6 +303,40 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
     return max + 1;
   }
+  // ================= VERSIONADO DE EXAMENES =================
+
+private baseExamName(): string {
+  const base = (this.subjectName || '').trim();
+  return base || 'Examen';
+}
+
+private formatExamName(version: number): string {
+  const v = String(version).padStart(2, '0');
+  return `${this.baseExamName()} ${v}`;
+}
+
+private async computeNextExamVersion(): Promise<number> {
+  const base = this.baseExamName();
+
+  const examsCol = collection(this.firestore, 'exams');
+  const qRef = query(examsCol, where('subjectId', '==', this.subjectId));
+  const snap = await getDocs(qRef);
+
+  const rx = new RegExp(`^${this.escapeRegex(base)}\\s+(\\d{2,})$`);
+
+  let max = 0;
+
+  snap.forEach((d) => {
+    const name = String((d.data() as any)?.name ?? '').trim();
+    const m = name.match(rx);
+    if (!m) return;
+
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > max) max = n;
+  });
+
+  return max + 1;
+}
 
   async openStudyGuideNameModal() {
     this.zone.run(() => {
@@ -412,41 +447,62 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  openExamModal() {
-    this.aiError = null;
-    this.lastSavedExamId = null;
-    this.examNameDraft = (this.subjectName || 'Examen').trim();
-    this.examDifficultyDraft = 'intermedio';
-    this.examModalOpen = true;
-    this.refreshView();
+async openExamModal() {
+  this.aiError = null;
+  this.lastSavedExamId = null;
+  this.examNameDraft = '';
+  this.examDifficultyDraft = 'intermedio';
+  this.examModalOpen = true;
+  this.refreshView();
+
+  let next = 1;
+
+  try {
+    next = await this.computeNextExamVersion();
+  } catch {
+    next = 1;
   }
+
+  this.examNameDraft = this.formatExamName(next);
+  this.refreshView();
+}
 
   closeExamModal() {
     this.examModalOpen = false;
     this.refreshView();
   }
 
-  async confirmExamAndGenerate() {
-    const name = (this.examNameDraft || '').trim();
-    if (!name) {
-      this.aiError = 'Ponle un nombre al examen.';
-      this.refreshView();
-      return;
-    }
+async confirmExamAndGenerate() {
 
-    if (this.generatingStudyGuide || this.generatingExam) return;
+  let version = 1;
 
-    this.zone.run(() => {
-      this.examModalOpen = false;
-      this.aiError = null;
-      this.exam = null;
-      this.lastSavedExamId = null;
-      this.generatingExam = true;
-      this.refreshView();
-    });
-
-    await this.generateExamFromContents(name, this.examDifficultyDraft);
+  try {
+    version = await this.computeNextExamVersion();
+  } catch {
+    version = 1;
   }
+
+  const name = this.formatExamName(version);
+
+  if (!name) {
+    this.aiError = 'Ponle un nombre al examen.';
+    this.refreshView();
+    return;
+  }
+
+  if (this.generatingStudyGuide || this.generatingExam) return;
+
+  this.zone.run(() => {
+    this.examModalOpen = false;
+    this.aiError = null;
+    this.exam = null;
+    this.lastSavedExamId = null;
+    this.generatingExam = true;
+    this.refreshView();
+  });
+
+  await this.generateExamFromContents(name, this.examDifficultyDraft);
+}
 
   private async generateExamFromContents(name: string, difficulty: ExamDifficulty) {
     if (this.generatingStudyGuide) return;
