@@ -22,6 +22,7 @@ export class Dashboard implements OnInit, OnDestroy {
   private uid: string | null = null;
   private authUnsubscribe?: () => void;
   private autoFlushTimer: ReturnType<typeof setInterval> | null = null;
+  private liveSyncTimer: ReturnType<typeof setInterval> | null = null;
 
   private sessionStartedAtMs: number | null = null;
   private sessionAccumulatedMs = 0;
@@ -49,21 +50,29 @@ export class Dashboard implements OnInit, OnDestroy {
     window.addEventListener('beforeunload', this.pageHideHandler);
 
     this.authUnsubscribe = onAuthStateChanged(this.auth, (user) => {
+      const previousUid = this.uid;
       this.uid = user?.uid ?? null;
       if (!this.uid) {
+        this.clearLiveSessionPreview(previousUid);
         this.flushSession(true);
         return;
       }
       this.resumeSession();
+      this.syncLiveSessionPreview();
     });
 
     this.autoFlushTimer = setInterval(() => {
       this.flushSession(false);
       this.resumeSession();
     }, 60000);
+
+    this.liveSyncTimer = setInterval(() => {
+      this.syncLiveSessionPreview();
+    }, 15000);
   }
 
   ngOnDestroy(): void {
+    this.clearLiveSessionPreview(this.uid);
     this.flushSession(true);
 
     this.authUnsubscribe?.();
@@ -71,6 +80,11 @@ export class Dashboard implements OnInit, OnDestroy {
     if (this.autoFlushTimer) {
       clearInterval(this.autoFlushTimer);
       this.autoFlushTimer = null;
+    }
+
+    if (this.liveSyncTimer) {
+      clearInterval(this.liveSyncTimer);
+      this.liveSyncTimer = null;
     }
 
     if (this.isBrowser) {
@@ -86,6 +100,7 @@ export class Dashboard implements OnInit, OnDestroy {
     if (this.sessionStartedAtMs != null) return;
 
     this.sessionStartedAtMs = Date.now();
+    this.syncLiveSessionPreview();
   }
 
   private pauseSession(): void {
@@ -93,6 +108,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
     this.sessionAccumulatedMs += Date.now() - this.sessionStartedAtMs;
     this.sessionStartedAtMs = null;
+    this.syncLiveSessionPreview();
   }
 
   private flushSession(force: boolean): void {
@@ -105,6 +121,45 @@ export class Dashboard implements OnInit, OnDestroy {
     if (totalSeconds <= 0) return;
 
     this.sessionAccumulatedMs -= totalSeconds * 1000;
+    this.syncLiveSessionPreview();
     void this.eventsService.recordSessionStudyTime(totalSeconds, this.uid);
+  }
+
+  private syncLiveSessionPreview(): void {
+    if (!this.isBrowser || !this.uid || !window.sessionStorage) return;
+
+    const totalMs =
+      this.sessionAccumulatedMs +
+      (this.sessionStartedAtMs != null ? Math.max(0, Date.now() - this.sessionStartedAtMs) : 0);
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const dateKey = this.toDateKey(new Date());
+
+    try {
+      if (totalSeconds <= 0) {
+        window.sessionStorage.removeItem(this.eventsService.getLiveStudyStorageKey(this.uid));
+        return;
+      }
+
+      window.sessionStorage.setItem(
+        this.eventsService.getLiveStudyStorageKey(this.uid),
+        JSON.stringify({ [dateKey]: totalSeconds }),
+      );
+    } catch {}
+  }
+
+  private clearLiveSessionPreview(uid: string | null): void {
+    if (!this.isBrowser || !window.sessionStorage) return;
+    if (!uid) return;
+
+    try {
+      window.sessionStorage.removeItem(this.eventsService.getLiveStudyStorageKey(uid));
+    } catch {}
+  }
+
+  private toDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
