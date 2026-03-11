@@ -23,6 +23,7 @@ import {
 } from '../../../services/open-router.service';
 
 type PanelMode = 'create' | 'view' | 'edit';
+type GeneratedCollectionName = 'studyGuides' | 'exams';
 
 @Component({
   selector: 'app-subject-content',
@@ -74,11 +75,13 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   nameModalOpen = false;
   nameDraft = '';
   lastSavedStudyGuideId: string | null = null;
+  lastSavedStudyGuideName: string | null = null;
 
   examModalOpen = false;
   examNameDraft = '';
   examDifficultyDraft: ExamDifficulty = 'intermedio';
   lastSavedExamId: string | null = null;
+  lastSavedExamName: string | null = null;
 
   private readonly defaultModel = 'openai/gpt-4o-mini';
 
@@ -143,6 +146,27 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async ensureSubjectNameLoaded() {
+    if ((this.subjectName || '').trim()) return;
+    await this.loadSubjectName();
+  }
+
+  private formatNotificationDate(date: Date = new Date()): string {
+    return new Intl.DateTimeFormat('es-HN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  private formatDifficultyLabel(difficulty: ExamDifficulty): string {
+    if (difficulty === 'basico') return 'Básico';
+    if (difficulty === 'avanzado') return 'Avanzado';
+    return 'Intermedio';
+  }
+
   private async notifyGuideCreated(name: string) {
     const uid = this.auth.currentUser?.uid;
     if (!uid) {
@@ -150,17 +174,57 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const generatedAt = this.formatNotificationDate();
+    const subject = (this.subjectName || 'Sin materia').trim();
+
     try {
       const notificationId = await this.notificationsService.createNotification(uid, {
         title: 'Guía creada',
-        message: `La guía "${name}" fue generada correctamente.`,
+        message: `La guía "${name}" fue generada correctamente. Materia: ${subject} • Fecha: ${generatedAt}`,
         type: 'success',
         source: 'study-guide-created',
       });
 
-      console.log('Notificación creada correctamente', { notificationId, uid, name });
+      console.log('Notificación de guía creada correctamente', { notificationId, uid, name });
+
+      try {
+        await this.notificationsService.playTone('success');
+      } catch (toneError) {
+        console.warn('No se pudo reproducir el sonido de notificación', toneError);
+      }
     } catch (error) {
       console.error('No se pudo crear la notificación de guía creada', { uid, name, error });
+    }
+  }
+
+  private async notifyExamCreated(name: string, difficulty: ExamDifficulty) {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) {
+      console.warn('No hay usuario autenticado para registrar la notificación');
+      return;
+    }
+
+    const generatedAt = this.formatNotificationDate();
+    const subject = (this.subjectName || 'Sin materia').trim();
+    const difficultyLabel = this.formatDifficultyLabel(difficulty);
+
+    try {
+      const notificationId = await this.notificationsService.createNotification(uid, {
+        title: 'Examen creado',
+        message: `El examen "${name}" fue generado correctamente. Materia: ${subject} • Dificultad: ${difficultyLabel} • Fecha: ${generatedAt}`,
+        type: 'success',
+        source: 'exam-created',
+      });
+
+      console.log('Notificación de examen creada correctamente', { notificationId, uid, name });
+
+      try {
+        await this.notificationsService.playTone('success');
+      } catch (toneError) {
+        console.warn('No se pudo reproducir el sonido de notificación', toneError);
+      }
+    } catch (error) {
+      console.error('No se pudo crear la notificación de examen creado', { uid, name, error });
     }
   }
 
@@ -283,60 +347,79 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     return lines.join('\n').trim();
   }
 
-  private baseGuideName(): string {
+  private baseGeneratedName(): string {
     const base = (this.subjectName || '').trim();
-    return base || 'Guía';
+    return base || 'Documento';
   }
 
-  private escapeRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  private formatGuideName(version: number): string {
-    const v = String(version).padStart(2, '0');
-    return `${this.baseGuideName()} ${v}`;
+  private formatGeneratedName(version: number): string {
+    const normalizedVersion = Math.max(1, version);
+    const v = String(normalizedVersion).padStart(2, '0');
+    return `${this.baseGeneratedName()} ${v}`;
   }
 
-  private async computeNextGuideVersion(): Promise<number> {
-    const base = this.baseGuideName();
-    const guidesCol = collection(this.firestore, 'studyGuides');
-    const qRef = query(guidesCol, where('subjectId', '==', this.subjectId));
+  private async computeNextVersionForCollection(collectionName: GeneratedCollectionName): Promise<number> {
+    await this.ensureSubjectNameLoaded();
+
+    const base = this.baseGeneratedName();
+    const ref = collection(this.firestore, collectionName);
+    const qRef = query(ref, where('subjectId', '==', this.subjectId));
     const snap = await getDocs(qRef);
 
-    const rx = new RegExp(`^${this.escapeRegex(base)}\\s+(\\d{2,})$`);
+    const rx = new RegExp(`^${this.escapeRegex(base)}\\s+(\\d+)$`);
     let max = 0;
 
     snap.forEach((d) => {
       const name = String((d.data() as any)?.name ?? '').trim();
-      const m = name.match(rx);
-      if (!m) return;
-      const n = Number(m[1]);
-      if (Number.isFinite(n) && n > max) max = n;
+      const match = name.match(rx);
+      if (!match) return;
+
+      const n = Number.parseInt(match[1], 10);
+      if (Number.isFinite(n) && n > max) {
+        max = n;
+      }
     });
 
     return max + 1;
+  }
+
+  private async buildNextGuideName(): Promise<string> {
+    const version = await this.computeNextVersionForCollection('studyGuides');
+    return this.formatGeneratedName(version);
+  }
+
+  private async buildNextExamName(): Promise<string> {
+    const version = await this.computeNextVersionForCollection('exams');
+    return this.formatGeneratedName(version);
   }
 
   async openStudyGuideNameModal() {
     this.zone.run(() => {
       this.aiError = null;
       this.lastSavedStudyGuideId = null;
+      this.lastSavedStudyGuideName = null;
       this.nameDraft = '';
       this.nameModalOpen = true;
       this.refreshView();
     });
 
-    let next = 1;
     try {
-      next = await this.computeNextGuideVersion();
-    } catch {
-      next = 1;
+      const nextName = await this.buildNextGuideName();
+      this.zone.run(() => {
+        this.nameDraft = nextName;
+        this.refreshView();
+      });
+    } catch (error) {
+      console.warn('No se pudo calcular el siguiente nombre de guía', error);
+      this.zone.run(() => {
+        this.nameDraft = this.formatGeneratedName(1);
+        this.refreshView();
+      });
     }
-
-    this.zone.run(() => {
-      this.nameDraft = this.formatGuideName(next);
-      this.refreshView();
-    });
   }
 
   closeStudyGuideNameModal() {
@@ -354,22 +437,15 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.aiError = null;
       this.studyGuide = null;
       this.lastSavedStudyGuideId = null;
+      this.lastSavedStudyGuideName = null;
       this.generatingStudyGuide = true;
       this.refreshView();
     });
 
-    let version = 1;
-    try {
-      version = await this.computeNextGuideVersion();
-    } catch {
-      version = 1;
-    }
-
-    const name = this.formatGuideName(version);
-    await this.generateStudyGuideFromContents(name);
+    await this.generateStudyGuideFromContents();
   }
 
-  private async generateStudyGuideFromContents(name: string) {
+  private async generateStudyGuideFromContents() {
     if (this.generatingExam) return;
 
     const apiKey = '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';
@@ -388,7 +464,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       console.log('Iniciando generación de guía', {
         subjectId: this.subjectId,
         subjectName: this.subjectName,
-        guideName: name,
       });
 
       const result = await this.openRouter.generateStudyGuide({
@@ -405,23 +480,25 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.refreshView();
       });
 
+      const finalName = await this.buildNextGuideName();
       const text = this.studyGuideToText(result);
 
       const savedId = await this.studyGuides.createStudyGuide({
-        name,
+        name: finalName,
         text,
         subjectId: this.subjectId,
         topic: result.topic,
       });
 
-      console.log('Guía guardada correctamente', { savedId, guideName: name });
+      console.log('Guía guardada correctamente', { savedId, guideName: finalName });
 
       this.zone.run(() => {
         this.lastSavedStudyGuideId = savedId;
+        this.lastSavedStudyGuideName = finalName;
         this.refreshView();
       });
 
-      await this.notifyGuideCreated(name);
+      await this.notifyGuideCreated(finalName);
     } catch (e) {
       console.error('Error al generar o guardar la guía', e);
 
@@ -438,13 +515,30 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
     }
   }
 
-  openExamModal() {
-    this.aiError = null;
-    this.lastSavedExamId = null;
-    this.examNameDraft = (this.subjectName || 'Examen').trim();
-    this.examDifficultyDraft = 'intermedio';
-    this.examModalOpen = true;
-    this.refreshView();
+  async openExamModal() {
+    this.zone.run(() => {
+      this.aiError = null;
+      this.lastSavedExamId = null;
+      this.lastSavedExamName = null;
+      this.examNameDraft = '';
+      this.examDifficultyDraft = 'intermedio';
+      this.examModalOpen = true;
+      this.refreshView();
+    });
+
+    try {
+      const nextName = await this.buildNextExamName();
+      this.zone.run(() => {
+        this.examNameDraft = nextName;
+        this.refreshView();
+      });
+    } catch (error) {
+      console.warn('No se pudo calcular el siguiente nombre de examen', error);
+      this.zone.run(() => {
+        this.examNameDraft = this.formatGeneratedName(1);
+        this.refreshView();
+      });
+    }
   }
 
   closeExamModal() {
@@ -453,13 +547,6 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   }
 
   async confirmExamAndGenerate() {
-    const name = (this.examNameDraft || '').trim();
-    if (!name) {
-      this.aiError = 'Ponle un nombre al examen.';
-      this.refreshView();
-      return;
-    }
-
     if (this.generatingStudyGuide || this.generatingExam) return;
 
     this.zone.run(() => {
@@ -467,14 +554,15 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.aiError = null;
       this.exam = null;
       this.lastSavedExamId = null;
+      this.lastSavedExamName = null;
       this.generatingExam = true;
       this.refreshView();
     });
 
-    await this.generateExamFromContents(name, this.examDifficultyDraft);
+    await this.generateExamFromContents(this.examDifficultyDraft);
   }
 
-  private async generateExamFromContents(name: string, difficulty: ExamDifficulty) {
+  private async generateExamFromContents(difficulty: ExamDifficulty) {
     if (this.generatingStudyGuide) return;
 
     const apiKey = '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';
@@ -505,8 +593,10 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.refreshView();
       });
 
+      const finalName = await this.buildNextExamName();
+
       const savedId = await this.examsService.createExam({
-        name,
+        name: finalName,
         topic: result.topic,
         difficulty: result.difficulty,
         subjectId: this.subjectId,
@@ -515,9 +605,14 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
       this.zone.run(() => {
         this.lastSavedExamId = savedId;
+        this.lastSavedExamName = finalName;
         this.refreshView();
       });
+
+      await this.notifyExamCreated(finalName, result.difficulty);
     } catch (e) {
+      console.error('Error al generar o guardar el examen', e);
+
       this.zone.run(() => {
         this.aiError = e instanceof Error ? e.message : 'Error desconocido';
         this.refreshView();

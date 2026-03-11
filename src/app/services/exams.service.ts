@@ -13,6 +13,7 @@ import {
   deleteDoc,
   updateDoc,
   Timestamp,
+  runTransaction,
 } from '@angular/fire/firestore';
 import { ExamDifficulty, GeneratedExam } from './open-router.service';
 
@@ -55,9 +56,124 @@ export class ExamsService {
     private auth: Auth,
   ) {}
 
-  async createExam(payload: CreateExamPayload): Promise<string> {
+  private getCurrentUserOrThrow() {
     const user = this.auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
+    return user;
+  }
+
+  private normalizeBaseName(subjectName: string): string {
+    const value = String(subjectName ?? '').trim();
+    return value || 'Examen';
+  }
+
+  private formatSequentialName(baseName: string, sequence: number): string {
+    const safeSequence = Math.max(1, Math.floor(Number(sequence) || 1));
+    return `${baseName} ${String(safeSequence).padStart(2, '0')}`;
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private async getExistingMaxExamSequence(subjectId: string, subjectName: string): Promise<number> {
+    const user = this.getCurrentUserOrThrow();
+    const baseName = this.normalizeBaseName(subjectName);
+    const rx = new RegExp(`^${this.escapeRegex(baseName)}\\s+(\\d+)$`);
+
+    const ref = collection(this.firestore, 'exams');
+    const q = query(ref, where('uid', '==', user.uid));
+    const snapshot = await getDocs(q);
+
+    let max = 0;
+
+    snapshot.docs.forEach((d) => {
+      const data = d.data();
+      const currentSubjectId = data['subjectId'] ?? null;
+      if (currentSubjectId !== subjectId) return;
+
+      const name = String(data['name'] ?? '').trim();
+      const match = name.match(rx);
+      if (!match) return;
+
+      const current = Number.parseInt(match[1], 10);
+      if (Number.isFinite(current) && current > max) {
+        max = current;
+      }
+    });
+
+    return max;
+  }
+
+  async getNextExamNamePreview(subjectId: string, subjectName: string): Promise<string> {
+    this.getCurrentUserOrThrow();
+
+    const baseName = this.normalizeBaseName(subjectName);
+    const subjectRef = doc(this.firestore, 'subjects', subjectId);
+    const subjectSnap = await getDoc(subjectRef);
+
+    let currentSequence = 0;
+
+    if (subjectSnap.exists()) {
+      const data = subjectSnap.data() as any;
+      currentSequence = Number(data?.examSequence ?? 0);
+    }
+
+    if (!Number.isFinite(currentSequence) || currentSequence < 0) {
+      currentSequence = 0;
+    }
+
+    if (currentSequence === 0) {
+      currentSequence = await this.getExistingMaxExamSequence(subjectId, subjectName);
+    }
+
+    return this.formatSequentialName(baseName, currentSequence + 1);
+  }
+
+  async reserveNextExamName(subjectId: string, subjectName: string): Promise<string> {
+    this.getCurrentUserOrThrow();
+
+    const baseName = this.normalizeBaseName(subjectName);
+    const existingMax = await this.getExistingMaxExamSequence(subjectId, subjectName);
+    const subjectRef = doc(this.firestore, 'subjects', subjectId);
+
+    const nextSequence = await runTransaction(this.firestore, async (transaction) => {
+      const subjectSnap = await transaction.get(subjectRef);
+
+      let currentSequence = 0;
+
+      if (subjectSnap.exists()) {
+        const data = subjectSnap.data() as any;
+        currentSequence = Number(data?.examSequence ?? 0);
+      }
+
+      if (!Number.isFinite(currentSequence) || currentSequence < 0) {
+        currentSequence = 0;
+      }
+
+      if (existingMax > currentSequence) {
+        currentSequence = existingMax;
+      }
+
+      const next = currentSequence + 1;
+
+      transaction.set(
+        subjectRef,
+        {
+          examSequence: next,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      return next;
+    });
+
+    return this.formatSequentialName(baseName, nextSequence);
+  }
+
+  async createExam(payload: CreateExamPayload): Promise<string> {
+    const user = this.getCurrentUserOrThrow();
 
     const name = (payload.name || '').trim();
     if (!name) throw new Error('name requerido');
@@ -68,7 +184,8 @@ export class ExamsService {
     const docRef = await addDoc(ref, {
       uid: user.uid,
       name,
-      topic: payload.topic || '',
+      nameLower: name.toLowerCase(),
+      topic: (payload.topic || '').trim(),
       difficulty: payload.difficulty || 'intermedio',
       subjectId: payload.subjectId ?? null,
       exam: payload.exam,
@@ -80,8 +197,7 @@ export class ExamsService {
   }
 
   async getMyExams(): Promise<ExamDoc[]> {
-    const user = this.auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
+    const user = this.getCurrentUserOrThrow();
 
     const ref = collection(this.firestore, 'exams');
     const q = query(ref, where('uid', '==', user.uid));
@@ -95,6 +211,7 @@ export class ExamsService {
       const completedHistory = completedHistoryRaw
         .map((x) => this.toDate(x))
         .filter((x): x is Date => x instanceof Date);
+
       const completedDurationsRaw = Array.isArray(data['completedDurations'])
         ? (data['completedDurations'] as unknown[])
         : [];
@@ -124,8 +241,7 @@ export class ExamsService {
   }
 
   async getExam(id: string): Promise<ExamDoc | null> {
-    const user = this.auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
+    const user = this.getCurrentUserOrThrow();
 
     const docRef = doc(this.firestore, 'exams', id);
     const snap = await getDoc(docRef);
@@ -133,12 +249,14 @@ export class ExamsService {
 
     const data = snap.data();
     if (data['uid'] !== user.uid) return null;
+
     const completedHistoryRaw = Array.isArray(data['completedHistory'])
       ? (data['completedHistory'] as unknown[])
       : [];
     const completedHistory = completedHistoryRaw
       .map((x) => this.toDate(x))
       .filter((x): x is Date => x instanceof Date);
+
     const completedDurationsRaw = Array.isArray(data['completedDurations'])
       ? (data['completedDurations'] as unknown[])
       : [];
@@ -164,8 +282,7 @@ export class ExamsService {
   }
 
   async saveResults(examId: string, results: ExamResults, attemptDurationMinutes?: number): Promise<void> {
-    const user = this.auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
+    const user = this.getCurrentUserOrThrow();
 
     const docRef = doc(this.firestore, 'exams', examId);
     const snap = await getDoc(docRef);
@@ -198,8 +315,7 @@ export class ExamsService {
   }
 
   async deleteExam(id: string): Promise<void> {
-    const user = this.auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
+    const user = this.getCurrentUserOrThrow();
 
     const docRef = doc(this.firestore, 'exams', id);
     const snap = await getDoc(docRef);
@@ -212,6 +328,7 @@ export class ExamsService {
   private toDate(value: unknown): Date | null {
     if (!value) return null;
     if (value instanceof Date) return value;
+
     if (typeof value === 'string') {
       const d = new Date(value);
       return Number.isNaN(d.getTime()) ? null : d;

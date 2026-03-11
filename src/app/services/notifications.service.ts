@@ -23,6 +23,7 @@ export interface AppNotification {
   read: boolean;
   source?: string;
   createdAt?: unknown;
+  createdAtMs?: number;
 }
 
 @Injectable({
@@ -39,7 +40,7 @@ export class NotificationsService {
   ) {
     const ref = query(
       collection(this.firestore, `users/${uid}/notifications`),
-      orderBy('createdAt', 'desc'),
+      orderBy('createdAtMs', 'desc'),
       limit(20),
     );
 
@@ -48,6 +49,7 @@ export class NotificationsService {
       (snapshot) => {
         const items: AppNotification[] = snapshot.docs.map((d) => {
           const data = d.data() as any;
+
           return {
             id: d.id,
             title: String(data?.title ?? ''),
@@ -56,6 +58,7 @@ export class NotificationsService {
             read: Boolean(data?.read),
             source: data?.source ? String(data.source) : undefined,
             createdAt: data?.createdAt ?? null,
+            createdAtMs: Number(data?.createdAtMs ?? 0),
           };
         });
 
@@ -86,6 +89,7 @@ export class NotificationsService {
         read: false,
         source: payload.source ?? 'app',
         createdAt: serverTimestamp(),
+        createdAtMs: Date.now(),
       });
 
       return ref.id;

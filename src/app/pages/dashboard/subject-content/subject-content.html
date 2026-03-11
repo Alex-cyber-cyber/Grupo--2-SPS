@@ -30,7 +30,7 @@
     <div class="confirm-head">
       <div class="confirm-title">
         <h4>Nombre de la guía</h4>
-        <p>Escribe un nombre para guardar esta guía en Firebase.</p>
+        <p>El nombre se genera automáticamente con el siguiente consecutivo disponible.</p>
       </div>
       <button class="close-x" type="button" (click)="closeStudyGuideNameModal()">✕</button>
     </div>
@@ -58,7 +58,7 @@
     <div class="confirm-head">
       <div class="confirm-title">
         <h4>Generar examen</h4>
-        <p>Configura el nombre y dificultad del examen.</p>
+        <p>El nombre se genera automáticamente con el siguiente consecutivo disponible.</p>
       </div>
       <button class="close-x" type="button" (click)="closeExamModal()">✕</button>
     </div>
@@ -66,7 +66,7 @@
     <div class="confirm-body">
       <div class="field">
         <label>Nombre</label>
-        <input type="text" [(ngModel)]="examNameDraft" placeholder="Ej: Examen parcial 1" />
+        <input type="text" [(ngModel)]="examNameDraft" readonly />
       </div>
 
       <div class="field">
@@ -81,6 +81,7 @@
             <mat-icon class="diff-icon">eco</mat-icon>
             <span class="diff-label">Básico</span>
           </button>
+
           <button
             type="button"
             class="diff-btn diff-intermedio"
@@ -90,6 +91,7 @@
             <mat-icon class="diff-icon">bolt</mat-icon>
             <span class="diff-label">Intermedio</span>
           </button>
+
           <button
             type="button"
             class="diff-btn diff-avanzado"
@@ -119,9 +121,13 @@
 
     <div class="ai-error" *ngIf="aiError">{{ aiError }}</div>
 
-    <div class="ai-loading" *ngIf="lastSavedStudyGuideId && studyGuide">Guía guardada en Firebase.</div>
+    <div class="ai-loading" *ngIf="lastSavedStudyGuideId && studyGuide">
+      Guía guardada en Firebase como <strong>{{ lastSavedStudyGuideName }}</strong>.
+    </div>
 
-    <div class="ai-loading" *ngIf="lastSavedExamId && exam">Examen guardado en Firebase.</div>
+    <div class="ai-loading" *ngIf="lastSavedExamId && exam">
+      Examen guardado en Firebase como <strong>{{ lastSavedExamName }}</strong>.
+    </div>
 
     <div class="ai-loading" *ngIf="generatingStudyGuide || generatingExam">
       {{ generatingStudyGuide ? 'Generando guía...' : 'Generando examen...' }}
@@ -264,7 +270,9 @@
     <div class="confirm-body">
       <div class="confirm-item">
         <div class="confirm-item-title">{{ pendingDelete?.title || 'Contenido' }}</div>
-        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">#{{ pendingDelete.tags.join(' #') }}</div>
+        <div class="confirm-item-tags" *ngIf="pendingDelete?.tags?.length">
+          #{{ pendingDelete.tags.join(' #') }}
+        </div>
       </div>
 
       <div class="confirm-actions">
