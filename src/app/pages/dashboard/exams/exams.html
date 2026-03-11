@@ -1,48 +1,63 @@
 <div class="ex-page">
-  @if (view === 'list') {
-    <header class="ex-header">
-      <div class="ex-title">
-        <h1>Mis Exámenes</h1>
-        <p>Practica y evalúa tus conocimientos</p>
-      </div>
-    </header>
+@if (view === 'list') {
+<header class="ex-header">
+  <div class="ex-title">
+  <h1>Mis Exámenes</h1>
+  <p>Practica y evalúa tus conocimientos</p>
+  </div>
+  <div class="ex-filter" *ngIf="subjects.length > 0">
+    <label for="subjectFilter">Materia</label>
+    <select id="subjectFilter"
+      [(ngModel)]="selectedSubject"
+      (ngModelChange)="updateFilter()">
+      <option *ngFor="let subject of subjects" [value]="subject">
+        {{ subject }}
+      </option>
+    </select>
+  </div>
+
+  <div class="ex-count">
+    {{ examsCount }} exámenes
+  </div>
+
+</header>
+
 
     @if (loading) {
       <div class="ex-loading">
-        <span class="ex-spinner"></span>
-        <span>Cargando exámenes...</span>
+      <span class="ex-spinner"></span>
+      <span>Cargando exámenes...</span>
       </div>
     }
-
     @if (!loading && error) {
       <div class="ex-error">{{ error }}</div>
     }
 
     @if (!loading && !error && exams.length === 0) {
       <div class="ex-empty">
-        <mat-icon class="ex-empty-icon">inbox</mat-icon>
-        <p>No tienes exámenes todavía</p>
-        <span>Genera tu primer examen desde los contenidos de una materia</span>
+      <mat-icon class="ex-empty-icon">inbox</mat-icon>
+      <p>No tienes exámenes todavía</p>
+      <span>Genera tu primer examen desde los contenidos de una materia</span>
       </div>
     }
 
     @if (!loading && !error && exams.length > 0) {
       <div class="ex-grid">
-        @for (exam of exams; track exam.id) {
+       @for (exam of filteredExams; track exam.id) {
           <div class="ex-card" (click)="openDetail(exam)">
             <div class="ex-card-top">
               <div class="ex-card-icon"><mat-icon>quiz</mat-icon></div>
               <div class="ex-card-info">
-                <h3 class="ex-card-name">{{ exam.name }}</h3>
-                <span class="ex-card-date">{{ formatDate(exam.createdAt) }}</span>
+              <h3 class="ex-card-name">{{ exam.name }}</h3>
+              <span class="ex-card-date">{{ formatDate(exam.createdAt) }}</span>
               </div>
               <button
                 class="ex-card-delete"
                 (click)="confirmDelete(exam.id, $event)"
                 title="Eliminar"
               >
-                <mat-icon>delete</mat-icon>
-              </button>
+            <mat-icon>delete</mat-icon>
+            </button>
             </div>
             <div class="ex-card-meta">
               <span class="ex-badge ex-badge-diff">{{ getDifficultyLabel(exam.difficulty) }}</span>
