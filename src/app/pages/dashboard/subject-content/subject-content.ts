@@ -72,14 +72,17 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   studyGuide: GeneratedStudyGuideResponse | null = null;
   exam: GeneratedExamResponse | null = null;
 
+  // Modales
   nameModalOpen = false;
   nameDraft = '';
+  nameLoading = false;                // ← Nuevo: evita generar antes de tener nombre
   lastSavedStudyGuideId: string | null = null;
   lastSavedStudyGuideName: string | null = null;
 
   examModalOpen = false;
   examNameDraft = '';
   examDifficultyDraft: ExamDifficulty = 'intermedio';
+  examLoading = false;                 // ← Nuevo: evita generar antes de tener nombre
   lastSavedExamId: string | null = null;
   lastSavedExamName: string | null = null;
 
@@ -403,6 +406,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.lastSavedStudyGuideId = null;
       this.lastSavedStudyGuideName = null;
       this.nameDraft = '';
+      this.nameLoading = true;          // ← Activar carga
       this.nameModalOpen = true;
       this.refreshView();
     });
@@ -411,12 +415,14 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       const nextName = await this.buildNextGuideName();
       this.zone.run(() => {
         this.nameDraft = nextName;
+        this.nameLoading = false;       // ← Nombre listo
         this.refreshView();
       });
     } catch (error) {
       console.warn('No se pudo calcular el siguiente nombre de guía', error);
       this.zone.run(() => {
         this.nameDraft = this.formatGeneratedName(1);
+        this.nameLoading = false;       // ← Aún así desactivamos carga
         this.refreshView();
       });
     }
@@ -425,12 +431,16 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
   closeStudyGuideNameModal() {
     this.zone.run(() => {
       this.nameModalOpen = false;
+      this.nameLoading = false;
       this.refreshView();
     });
   }
 
   async confirmStudyGuideNameAndGenerate() {
     if (this.generatingStudyGuide || this.generatingExam) return;
+    if (!this.nameDraft.trim()) return; // ← Seguridad extra
+
+    const confirmedName = this.nameDraft;
 
     this.zone.run(() => {
       this.nameModalOpen = false;
@@ -442,10 +452,10 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.refreshView();
     });
 
-    await this.generateStudyGuideFromContents();
+    await this.generateStudyGuideFromContents(confirmedName);
   }
 
-  private async generateStudyGuideFromContents() {
+  private async generateStudyGuideFromContents(confirmedName: string) {
     if (this.generatingExam) return;
 
     const apiKey = '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';
@@ -464,6 +474,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       console.log('Iniciando generación de guía', {
         subjectId: this.subjectId,
         subjectName: this.subjectName,
+        confirmedName,
       });
 
       const result = await this.openRouter.generateStudyGuide({
@@ -480,7 +491,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.refreshView();
       });
 
-      const finalName = await this.buildNextGuideName();
+      const finalName = confirmedName;
       const text = this.studyGuideToText(result);
 
       const savedId = await this.studyGuides.createStudyGuide({
@@ -522,6 +533,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.lastSavedExamName = null;
       this.examNameDraft = '';
       this.examDifficultyDraft = 'intermedio';
+      this.examLoading = true;           // ← Activar carga
       this.examModalOpen = true;
       this.refreshView();
     });
@@ -530,12 +542,14 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       const nextName = await this.buildNextExamName();
       this.zone.run(() => {
         this.examNameDraft = nextName;
+        this.examLoading = false;        // ← Nombre listo
         this.refreshView();
       });
     } catch (error) {
       console.warn('No se pudo calcular el siguiente nombre de examen', error);
       this.zone.run(() => {
         this.examNameDraft = this.formatGeneratedName(1);
+        this.examLoading = false;        // ← Desactivamos carga
         this.refreshView();
       });
     }
@@ -543,11 +557,16 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
 
   closeExamModal() {
     this.examModalOpen = false;
+    this.examLoading = false;
     this.refreshView();
   }
 
   async confirmExamAndGenerate() {
     if (this.generatingStudyGuide || this.generatingExam) return;
+    if (!this.examNameDraft.trim()) return;
+
+    const confirmedName = this.examNameDraft;
+    const confirmedDifficulty = this.examDifficultyDraft;
 
     this.zone.run(() => {
       this.examModalOpen = false;
@@ -559,10 +578,10 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
       this.refreshView();
     });
 
-    await this.generateExamFromContents(this.examDifficultyDraft);
+    await this.generateExamFromContents(confirmedDifficulty, confirmedName);
   }
 
-  private async generateExamFromContents(difficulty: ExamDifficulty) {
+  private async generateExamFromContents(difficulty: ExamDifficulty, confirmedName: string) {
     if (this.generatingStudyGuide) return;
 
     const apiKey = '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';
@@ -593,7 +612,7 @@ export class SubjectContentComponent implements OnInit, OnDestroy {
         this.refreshView();
       });
 
-      const finalName = await this.buildNextExamName();
+      const finalName = confirmedName;
 
       const savedId = await this.examsService.createExam({
         name: finalName,

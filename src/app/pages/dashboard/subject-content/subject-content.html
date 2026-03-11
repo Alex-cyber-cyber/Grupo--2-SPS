@@ -24,6 +24,7 @@
     <button class="back-btn" type="button" (click)="goBack()">← Volver</button>
   </div>
 
+  <!-- MODAL GUÍA -->
   <div class="confirm-backdrop" *ngIf="nameModalOpen" (click)="closeStudyGuideNameModal()"></div>
 
   <div class="confirm-modal" *ngIf="nameModalOpen" (click)="$event.stopPropagation()">
@@ -45,13 +46,19 @@
         <button class="cancel-btn" type="button" (click)="closeStudyGuideNameModal()">
           Cancelar
         </button>
-        <button class="danger-btn" type="button" (click)="confirmStudyGuideNameAndGenerate()">
-          Generar
+        <button
+          class="danger-btn"
+          type="button"
+          (click)="confirmStudyGuideNameAndGenerate()"
+          [disabled]="nameLoading || !nameDraft.trim()"
+        >
+          {{ nameLoading ? 'Cargando...' : 'Generar' }}
         </button>
       </div>
     </div>
   </div>
 
+  <!-- MODAL EXAMEN -->
   <div class="confirm-backdrop" *ngIf="examModalOpen" (click)="closeExamModal()"></div>
 
   <div class="confirm-modal" *ngIf="examModalOpen" (click)="$event.stopPropagation()">
@@ -106,11 +113,19 @@
 
       <div class="confirm-actions">
         <button class="cancel-btn" type="button" (click)="closeExamModal()">Cancelar</button>
-        <button class="danger-btn" type="button" (click)="confirmExamAndGenerate()">Generar</button>
+        <button
+          class="danger-btn"
+          type="button"
+          (click)="confirmExamAndGenerate()"
+          [disabled]="examLoading || !examNameDraft.trim()"
+        >
+          {{ examLoading ? 'Cargando...' : 'Generar' }}
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- PANEL DE RESULTADOS IA -->
   <div class="ai-panel" *ngIf="aiError || studyGuide || exam || generatingStudyGuide || generatingExam">
     <div class="ai-panel-head">
       <div>
@@ -184,6 +199,7 @@
     </div>
   </div>
 
+  <!-- PANEL LATERAL DE CREACIÓN/EDICIÓN -->
   <div class="add-panel" *ngIf="panelOpen">
     <div class="add-panel-head">
       <div class="add-panel-title">
@@ -233,6 +249,7 @@
     </div>
   </div>
 
+  <!-- LISTA DE CONTENIDOS -->
   <div class="content-grid" *ngIf="contents().length > 0">
     <div class="content-card" *ngFor="let c of contents()">
       <div class="content-card-top">
@@ -256,6 +273,7 @@
     <p>No tienes contenidos agregados</p>
   </div>
 
+  <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR -->
   <div class="confirm-backdrop" *ngIf="confirmOpen" (click)="closeConfirm()"></div>
 
   <div class="confirm-modal" *ngIf="confirmOpen" (click)="$event.stopPropagation()">
