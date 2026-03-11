@@ -373,4 +373,3 @@ export class EventsService {
   }
 }
 
-
