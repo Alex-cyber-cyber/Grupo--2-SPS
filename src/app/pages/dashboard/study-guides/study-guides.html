@@ -1,10 +1,21 @@
 <div class="sg-page">
-  <header class="sg-header">
-    <div class="sg-title">
-      <h1>Mis Guías de Estudio</h1>
-      <p>Aquí puedes ver todas las guías que has generado</p>
-    </div>
-  </header>
+<header class="sg-header">
+  <div class="sg-title">
+    <h1>Mis Guías de Estudio</h1>
+    <p>Aquí puedes ver todas las guías que has generado</p>
+  </div>
+  <span class="sg-count">
+    {{ filtered.length }} 
+    {{ filtered.length === 1 ? 'guía' : 'guías' }}
+  </span>
+  <div class="sg-filter">
+    <label>Materia</label>
+    <select [(ngModel)]="selectedTopic" (ngModelChange)="updateFilter()">
+      <option value="">Todas</option>
+      <option *ngFor="let topic of topics" [value]="topic">{{ topic }}</option>
+    </select>
+  </div>
+</header>
 
   @if (loading) {
     <div class="sg-loading">
@@ -27,7 +38,7 @@
 
   @if (!loading && !error && guides.length > 0) {
     <div class="sg-grid">
-      @for (guide of guides; track guide.id) {
+      @for (guide of filtered; track guide.id){
         <div class="sg-card" (click)="openGuide(guide)">
           <div class="sg-card-top">
             <div class="sg-card-icon"><mat-icon>menu_book</mat-icon></div>
