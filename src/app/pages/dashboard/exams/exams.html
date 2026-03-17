@@ -76,7 +76,8 @@
                 <div class="ex-history-info">
                   <span class="ex-history-name">{{ exam.name }}</span>
                   <span class="ex-history-meta">
-                    {{ getDifficultyLabel(exam.difficulty) }} · {{ exam.exam.questions.length }} preguntas
+                    {{ getDifficultyLabel(exam.difficulty) }} ·
+                    {{ exam.exam.questions.length }} preguntas
                   </span>
                 </div>
                 <div class="ex-history-score-col">
@@ -174,7 +175,9 @@
           <span class="ex-review-pts">
             {{ selectedExam.results!.score }}/{{ selectedExam.results!.totalPoints }} pts
           </span>
-          <span class="ex-badge ex-badge-diff">{{ getDifficultyLabel(selectedExam.difficulty) }}</span>
+          <span class="ex-badge ex-badge-diff">{{
+            getDifficultyLabel(selectedExam.difficulty)
+          }}</span>
         </div>
       </div>
 
@@ -192,7 +195,9 @@
         <div class="ex-question-card">
           <div class="ex-question-header">
             <span class="ex-question-type">
-              {{ reviewQuestion.type === 'multiple_choice' ? 'Opción múltiple' : 'Verdadero/Falso' }}
+              {{
+                reviewQuestion.type === 'multiple_choice' ? 'Opción múltiple' : 'Verdadero/Falso'
+              }}
             </span>
             <span class="ex-question-points">{{ reviewQuestion.points }} pts</span>
           </div>
@@ -256,7 +261,9 @@
             <mat-icon class="ex-feedback-icon">{{
               getReviewAnswer(reviewQuestion.id)?.correct ? 'check_circle' : 'cancel'
             }}</mat-icon>
-            <span>{{ getReviewAnswer(reviewQuestion.id)?.correct ? '¡Correcto!' : 'Incorrecto' }}</span>
+            <span>{{
+              getReviewAnswer(reviewQuestion.id)?.correct ? '¡Correcto!' : 'Incorrecto'
+            }}</span>
           </div>
 
           @if (reviewQuestion.explanation) {
