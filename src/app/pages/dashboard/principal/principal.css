@@ -69,6 +69,7 @@ p {
   border-radius: 14px;
   background: #ffffff;
   box-shadow: inset 0 0 0 1px rgba(228, 0, 43, 0.08);
+  text-align: center;
 }
 
 .streak-label {

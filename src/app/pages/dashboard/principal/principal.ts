@@ -167,7 +167,7 @@ export class Principal implements AfterViewInit, OnDestroy {
       : ['Sin pendientes'];
     const pendingValues = pendingDriven.topSubjects.length
       ? pendingDriven.topSubjects.map((e) => e.pending)
-      : [1];
+      : [0];
     const combinedStudyDateKeys = [...new Set([...metrics.studyDateKeys, ...examDriven.studyDateKeys])];
     const combinedStreak = this.computeStreakFromDateKeys(combinedStudyDateKeys);
 
@@ -503,8 +503,9 @@ export class Principal implements AfterViewInit, OnDestroy {
     const safeGuideValues = guideValues.length ? guideValues : [0];
     const safeCreatedExamLabels = createdExamLabels.length ? createdExamLabels : ['Sin datos'];
     const safeCreatedExamValues = createdExamValues.length ? createdExamValues : [0];
-    const safePendingLabels = pendingLabels.length ? pendingLabels : ['Sin pendientes'];
-    const safePendingValues = pendingValues.length ? pendingValues : [0];
+    const hasPendingData = pendingLabels.length && pendingValues.length;
+    const safePendingLabels = hasPendingData ? pendingLabels : [];
+    const safePendingValues = hasPendingData ? pendingValues : [];
     const pendingColors = this.buildColorScale(safePendingLabels.length);
     const safeWeeklyHours = weeklyHours?.length ? weeklyHours : [0, 0, 0, 0, 0, 0, 0];
     const maxWeeklyHours = Math.max(...safeWeeklyHours);
@@ -736,7 +737,8 @@ export class Principal implements AfterViewInit, OnDestroy {
 
   private buildColorScale(count: number): string[] {
     const palette = ['#6bb6e5', '#f28db5', '#4ecfb4']; // cielo, rosa, aqua más vivos
-    if (count <= 1) return [palette[0]];
+    if (count <= 0) return [];
+    if (count === 1) return [palette[0]];
     const colors: string[] = [];
     for (let i = 0; i < count; i++) {
       colors.push(palette[i % palette.length]);
